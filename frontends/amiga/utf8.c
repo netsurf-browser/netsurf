@@ -35,6 +35,8 @@
 bool ami_utf8_is_ascii(const char *string, size_t length)
 {
 	size_t l = 0;
+	
+	if(length <= 0) return true;
 
 	while(++l < length){
 		if(string[l] & 0x80) return false;

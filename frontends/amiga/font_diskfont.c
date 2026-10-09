@@ -157,11 +157,17 @@ static nserror amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
-	char *localtext = string;
+	if((length <= 0) || (string == NULL) || (string[0] == '\0')) {
+		*width = 0;
+		return NSERROR_OK;
+	}
+	
+	char *localtext = (char *)string;
+	size_t len_localtext = length;
 	bool is_ascii = ami_utf8_is_ascii(string, length);
 	size_t len_localtext = length;
 
-	*width = length;
+	*width = 0;
 
 	struct TextFont *bmfont = ami_font_bm_open(&temp_rp, fstyle);
 	if(bmfont == NULL) return NSERROR_INVALID;
@@ -196,9 +202,15 @@ static nserror amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyl
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
+	if((length <= 0) || (string == NULL) || (string[0] == '\0')) {
+		*char_offset = length;
+		*actual_x = x;
+		return NSERROR_OK;
+	}
+	
 	struct TextExtent extent;
 	struct TextFont *bmfont;
-	char *localtext = string;
+	char *localtext = (char *)string;
 	bool is_ascii = ami_utf8_is_ascii(string, length);
 	ULONG co = 0;
 
@@ -255,10 +267,16 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
+	if((length <= 0) || (string == NULL) || (string[0] == '\0')) {
+		*char_offset = length;
+		*actual_x = x;
+		return NSERROR_OK;
+	}
+
 	struct TextExtent extent;
 	ULONG co, offset;
 	char *charp;
-	char *localtext = string;
+	char *localtext = (char *)string;
 	size_t len_localtext = length;
 	bool is_ascii = ami_utf8_is_ascii(string, length);
 
@@ -323,12 +341,11 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 static ULONG amiga_bm_nsfont_text(struct RastPort *rp, const char *string, ULONG length,
 			const plot_font_style_t *fstyle, int dx, int dy, bool aa)
 {
-	if(!string || string[0]=='\0') return 0;
-	if(!length) return 0;
+	if((length <= 0) || (string == NULL) || (string[0] == '\0')) return 0;
 	if(rp == NULL) return 0;
 
 	struct TextFont *bmfont = ami_font_bm_open(rp, fstyle);
-	char *localtext = string;
+	char *localtext = (char *)string;
 	bool is_ascii = ami_utf8_is_ascii(string, length);
 	ULONG len_localtext = length;
 
