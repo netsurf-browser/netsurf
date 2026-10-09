@@ -165,7 +165,6 @@ static nserror amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
 	char *localtext = (char *)string;
 	size_t len_localtext = length;
 	bool is_ascii = ami_utf8_is_ascii(string, length);
-	size_t len_localtext = length;
 
 	*width = 0;
 
