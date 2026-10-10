@@ -34,7 +34,9 @@
 
 #include "amiga/font.h"
 #include "amiga/font_diskfont.h"
+#include "amiga/font_dfcache.h"
 #include "amiga/gui.h"
+#include "amiga/misc.h"
 #include "amiga/plotters.h"
 #include "amiga/utf8.h"
 
@@ -42,14 +44,11 @@
 
 #define MAX_FONT_NAME_SIZE 33
 
-static plot_font_style_t *prev_fstyle = NULL;
-static struct TextFont *prev_font = NULL;
 static struct RastPort temp_rp;
 static UBYTE style_set = 0;
 
-static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_style_t *fstyle)
+static struct ami_font_dfcache_node *ami_font_bm_open(struct RastPort *rp, const plot_font_style_t *fstyle)
 {
-	struct TextFont *bmfont = NULL;
 	struct TextAttr tattr;
 	char *fontname;
 	char font[MAX_FONT_NAME_SIZE];
@@ -92,20 +91,6 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 	if (fstyle->weight >= 700)
 		requested_style |= FSF_BOLD;
 
-	if((prev_fstyle != NULL) && (prev_font != NULL) &&
-		(fstyle->family == prev_fstyle->family) &&
-		(fstyle->size == prev_fstyle->size)) {
-			 if(rp->Font != prev_font) {
-				 /* We have the correct font open, but it isn't set here */
-				 SetRPAttrs(rp, RPTAG_Font, prev_font, TAG_DONE);
-			 }
-			/* Current font is correct, just SoftStyle it */
-			NSLOG(netsurf, INFO, "Applying SoftStyle to current font");
-			style_set = AskSoftStyle(rp);
-			SetSoftStyle(rp, requested_style, style_set);
-			return prev_font;
-	}
-
 	if(fontname != NULL) {
 		snprintf(font, MAX_FONT_NAME_SIZE, "%s.font", fontname);
 	} else {
@@ -115,30 +100,44 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 	tattr.ta_Name = font;
 	ULONG fsize = fstyle->size * nsoption_int(screen_ydpi) / 72;
 	tattr.ta_YSize = fsize / PLOT_STYLE_SCALE;
+	if(tattr.ta_YSize == 0) return NULL;
 	NSLOG(netsurf, INFO, "font: %s/%d", tattr.ta_Name, tattr.ta_YSize);
 
-	if((bmfont = OpenDiskFont(&tattr))) {
-		SetRPAttrs(rp, RPTAG_Font, bmfont, TAG_DONE);
+	struct ami_font_dfcache_node *nodedata = ami_font_dfcache_locate(tattr.ta_Name, tattr.ta_YSize);
+	if(nodedata) {
+		SetRPAttrs(rp, RPTAG_Font, nodedata->font, TAG_DONE);
+		NSLOG(netsurf, INFO, "Applying SoftStyle to current font");
 		style_set = AskSoftStyle(rp);
 		SetSoftStyle(rp, requested_style, style_set);
+		return nodedata;
+	}
+	
+	nodedata = ami_font_dfcache_alloc_entry(tattr.ta_Name, tattr.ta_YSize);
 
-		if(prev_fstyle != NULL) {
-			memcpy(prev_fstyle, fstyle, sizeof(plot_font_style_t));
-		}
+	if(nodedata == NULL) {
+		amiga_warn_user("NoMemory", "");
+		return NULL;
+	}
+
+	if((nodedata->font = OpenDiskFont(&tattr))) {
+		SetRPAttrs(rp, RPTAG_Font, nodedata->font, TAG_DONE);
+		style_set = AskSoftStyle(rp);
+		SetSoftStyle(rp, requested_style, style_set);
 	} else {
 		/* Fall back to system-wide default font */
 		SetRPAttrs(rp, RPTAG_Font, GfxBase->DefaultFont, TAG_DONE);
-		return GfxBase->DefaultFont;
+		nodedata->font = GfxBase->DefaultFont;
 	}
 	
-	if(prev_font != NULL) {
-		CloseFont(prev_font);
-		prev_font = NULL;
-	}
+	ami_font_dfcache_insert(nodedata, tattr.ta_Name, tattr.ta_YSize);
 	
-	prev_font = bmfont;
+	return nodedata;
+}
 
-	return bmfont;
+void ami_font_diskfont_close(void *nso)
+{
+	struct ami_font_dfcache_node *node = (struct ami_font_dfcache_node *)nso;
+	if(node->font != GfxBase->DefaultFont) CloseFont(node->font);
 }
 
 static size_t ami_font_bm_convert_local_to_utf8_offset(const char *utf8string, size_t length, ULONG offset)
@@ -169,8 +168,7 @@ static nserror amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
 
 	*width = 0;
 
-	struct TextFont *bmfont = ami_font_bm_open(&temp_rp, fstyle);
-	if(bmfont == NULL) return NSERROR_INVALID;
+	if(!ami_font_bm_open(&temp_rp, fstyle)) return NSERROR_INVALID;
 
 	if(is_ascii == false) {
 		if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
@@ -209,7 +207,6 @@ static nserror amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyl
 	}
 	
 	struct TextExtent extent;
-	struct TextFont *bmfont;
 	char *localtext = (char *)string;
 	bool is_ascii = ami_utf8_is_ascii(string, length);
 	ULONG co = 0;
@@ -217,8 +214,7 @@ static nserror amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyl
 	if(x < 0) x = 0;
 	if(x > 32767) x = 32767;
 
-	bmfont = ami_font_bm_open(&temp_rp, fstyle);
-	if(bmfont == NULL) return NSERROR_INVALID;
+	if(!ami_font_bm_open(&temp_rp, fstyle)) return NSERROR_INVALID;
 
 	if(is_ascii == false) {
 		if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
@@ -283,8 +279,7 @@ static nserror amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 	if(x < 0) x = 0;
 	if(x > 32767) x = 32767;
 
-	struct TextFont *bmfont = ami_font_bm_open(&temp_rp, fstyle);
-	if(bmfont == NULL) return NSERROR_INVALID;
+	if(!ami_font_bm_open(&temp_rp, fstyle)) return NSERROR_INVALID;
 
 	if(is_ascii == false) {
 		if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) {
@@ -344,12 +339,10 @@ static ULONG amiga_bm_nsfont_text(struct RastPort *rp, const char *string, ULONG
 	if((length <= 0) || (string == NULL) || (string[0] == '\0')) return 0;
 	if(rp == NULL) return 0;
 
-	struct TextFont *bmfont = ami_font_bm_open(rp, fstyle);
+	if(!ami_font_bm_open(rp, fstyle)) return 0;
 	char *localtext = (char *)string;
 	bool is_ascii = ami_utf8_is_ascii(string, length);
 	ULONG len_localtext = length;
-
-	if(bmfont == NULL) return 0;
 
 	if(is_ascii == false) {
 		if(utf8_to_local_encoding(string, length, &localtext) != NSERROR_OK) return 0;
@@ -376,23 +369,16 @@ void ami_font_diskfont_init(void)
 	/* Set up table */
 	ami_nsfont = &ami_font_diskfont_table;
 
-	/* Alloc space to hold currently open font - doesn't matter if this fails */
-	prev_fstyle = calloc(1, sizeof(plot_font_style_t));
-
+	/* Initialise font cache */
+	ami_font_dfcache_init();
+	
 	/* Init temp RastPort */
 	InitRastPort(&temp_rp);
 }
 
 void ami_font_diskfont_fini(void)
 {
-	if(prev_font != NULL) {
-		CloseFont(prev_font);
-		prev_font = NULL;
-	}
-
-	if(prev_fstyle != NULL) {
-		free(prev_fstyle);
-		prev_fstyle = NULL;
-	}
+	/* Initialise font caching etc lists */
+	ami_font_dfcache_fini();
 }
 
