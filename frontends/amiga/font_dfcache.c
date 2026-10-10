@@ -27,7 +27,7 @@
 #include "utils/log.h"
 
 #include "amiga/font.h"
-#include "amiga/font_bullet.h"
+#include "amiga/font_diskfont.h"
 #include "amiga/font_dfcache.h"
 #include "amiga/schedule.h"
 
