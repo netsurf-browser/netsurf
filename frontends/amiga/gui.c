@@ -1859,35 +1859,25 @@ static void ami_update_quals(struct gui_window_2 *gwin)
 }
 
 /* exported interface documented in amiga/gui.h */
-nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox)
+nserror ami_gui_get_space_box(Object *obj, struct IBox *bbox)
 {
-	struct IBox *ib = AllocVec(sizeof(struct IBox), MEMF_PRIVATE);
-	if(ib == NULL) return NSERROR_NOMEM;
 #ifdef __amigaos4__
 	if(LIB_IS_AT_LEAST((struct Library *)SpaceBase, 53, 6)) {
-		GetAttr(SPACE_RenderBox, obj, (ULONG *)ib);
+		GetAttr(SPACE_RenderBox, obj, (ULONG *)bbox);
 	} else
 #endif
 	{
 		struct IBox *t_ib;
 		GetAttr(SPACE_AreaBox, obj, (ULONG *)&t_ib);
 		if(t_ib == NULL) {
-			FreeVec(ib);
 			return NSERROR_NOMEM;
 		} else {
 			/* Create a copy so this works the same as the newer SPACE_RenderBox */
-			CopyMem(t_ib, ib, sizeof(struct IBox));
+			CopyMem(t_ib, bbox, sizeof(struct IBox));
 		}
 	}
 
-	*bbox = ib;
 	return NSERROR_OK;
-}
-
-/* exported interface documented in amiga/gui.h */
-void ami_gui_free_space_box(struct IBox *bbox)
-{
-	if(bbox != NULL) FreeVec(bbox);
 }
 
 static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin,
@@ -1909,21 +1899,18 @@ bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *restrict x, int *res
 	int mouse_x, int mouse_y)
 {
 	int ns_x, ns_y;
-	struct IBox *bbox;
+	struct IBox bbox;
 
 	if(mouse_x == -1) mouse_x = gwin->win->MouseX;
 	if(mouse_y == -1) mouse_y = gwin->win->MouseY;
 
 	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) == NSERROR_OK) {
-		ns_x = (ULONG)(mouse_x - bbox->Left);
-		ns_y = (ULONG)(mouse_y - bbox->Top);
+		ns_x = (ULONG)(mouse_x - bbox.Left);
+		ns_y = (ULONG)(mouse_y - bbox.Top);
 
-		if((ns_x < 0) || (ns_x > bbox->Width) || (ns_y < 0) || (ns_y > bbox->Height)) {
-			ami_gui_free_space_box(bbox);
+		if((ns_x < 0) || (ns_x > bbox.Width) || (ns_y < 0) || (ns_y > bbox.Height)) {
 			return false;
 		}
-
-		ami_gui_free_space_box(bbox);
 	} else {
 		amiga_warn_user("NoMemory", "");
 		return false;
@@ -1934,7 +1921,7 @@ bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *restrict x, int *res
 
 static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 {
-	struct IBox *bbox;
+	struct IBox bbox;
 	int x, y;
 	struct rect rect;
 
@@ -1958,11 +1945,11 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 			switch(xs)
 			{
 				case SCROLL_PAGE_UP:
-					xs = gwin->gw->scrollx - bbox->Width;
+					xs = gwin->gw->scrollx - bbox.Width;
 				break;
 
 				case SCROLL_PAGE_DOWN:
-					xs = gwin->gw->scrollx + bbox->Width;
+					xs = gwin->gw->scrollx + bbox.Width;
 				break;
 
 				case SCROLL_TOP:
@@ -1981,11 +1968,11 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 			switch(ys)
 			{
 				case SCROLL_PAGE_UP:
-					ys = gwin->gw->scrolly - bbox->Height;
+					ys = gwin->gw->scrolly - bbox.Height;
 				break;
 
 				case SCROLL_PAGE_DOWN:
-					ys = gwin->gw->scrolly + bbox->Height;
+					ys = gwin->gw->scrolly + bbox.Height;
 				break;
 
 				case SCROLL_TOP:
@@ -2000,8 +1987,6 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 					ys += gwin->gw->scrolly;
 				break;
 			}
-
-			ami_gui_free_space_box(bbox);
 			rect.x0 = rect.x1 = xs;
 			rect.y0 = rect.y1 = ys;
 			gui_window_set_scroll(gwin->gw, &rect);
@@ -2011,7 +1996,7 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 
 static struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct rect *rect)
 {
-	struct IBox *bbox, *ibox;
+	struct IBox bbox, *ibox;
 
 	ibox = malloc(sizeof(struct IBox));
 	if(ibox == NULL) return NULL;
@@ -2028,19 +2013,17 @@ static struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct 
 	ibox->Width = (rect->x1 - rect->x0);
 	ibox->Height = (rect->y1 - rect->y0);
 
-	if(ibox->Left < bbox->Left) ibox->Left = bbox->Left;
-	if(ibox->Top < bbox->Top) ibox->Top = bbox->Top;
+	if(ibox->Left < bbox.Left) ibox->Left = bbox.Left;
+	if(ibox->Top < bbox.Top) ibox->Top = bbox.Top;
 
-	if((ibox->Left > (bbox->Left + bbox->Width)) ||
-		(ibox->Top > (bbox->Top + bbox->Height)) ||
+	if((ibox->Left > (bbox.Left + bbox.Width)) ||
+		(ibox->Top > (bbox.Top + bbox.Height)) ||
 		(ibox->Width < 0) || (ibox->Height < 0))
 	{
 		free(ibox);
-		ami_gui_free_space_box(bbox);
 		return NULL;
 	}
 
-	ami_gui_free_space_box(bbox);
 	return ibox;
 }
 
@@ -2100,7 +2083,7 @@ gui_window_get_dimensions(struct gui_window *gw,
 			  int *restrict width,
 			  int *restrict height)
 {
-	struct IBox *bbox;
+	struct IBox bbox;
 	nserror res;
 
 	res = ami_gui_get_space_box((Object *)gw->shared->objects[GID_BROWSER],
@@ -2110,10 +2093,8 @@ gui_window_get_dimensions(struct gui_window *gw,
 		return res;
 	}
 
-	*width = bbox->Width;
-	*height = bbox->Height;
-
-	ami_gui_free_space_box(bbox);
+	*width = bbox.Width;
+	*height = bbox.Height;
 
 	return NSERROR_OK;
 }
@@ -2482,7 +2463,7 @@ gui_window_console_log(struct gui_window *g,
 static void gui_window_set_icon(struct gui_window *g, struct hlcache_handle *icon)
 {
 	struct BitMap *bm = NULL;
-	struct IBox *bbox;
+	struct IBox bbox;
 	struct bitmap *icon_bitmap = NULL;
 
 	if(nsoption_bool(kiosk_mode) == true) return;
@@ -2519,14 +2500,14 @@ static void gui_window_set_icon(struct gui_window *g, struct hlcache_handle *ico
 				return;
 			}
 
-			EraseRect(g->shared->win->RPort, bbox->Left, bbox->Top,
-						bbox->Left + 16, bbox->Top + 16);
+			EraseRect(g->shared->win->RPort, bbox.Left, bbox.Top,
+						bbox.Left + 16, bbox.Top + 16);
 
 #ifdef __amigaos4__
 			BltBitMapTags(BLITA_SrcX, 0,
 						BLITA_SrcY, 0,
-						BLITA_DestX, bbox->Left,
-						BLITA_DestY, bbox->Top,
+						BLITA_DestX, bbox.Left,
+						BLITA_DestY, bbox.Top,
 						BLITA_Width, 16,
 						BLITA_Height, 16,
 						BLITA_Source, bm,
@@ -2539,13 +2520,12 @@ static void gui_window_set_icon(struct gui_window *g, struct hlcache_handle *ico
 #else
 			if(!amiga_bitmap_get_opaque(icon_bitmap)) {
 				BltMaskBitMapRastPort(bm, 0, 0, g->shared->win->RPort,
-							bbox->Left, bbox->Top, 16, 16, minterm, tag_data);
+							bbox.Left, bbox.Top, 16, 16, minterm, tag_data);
 			} else {
 				BltBitMapRastPort(bm, 0, 0, g->shared->win->RPort,
-							bbox->Left, bbox->Top, 16, 16, 0xc0);
+							bbox.Left, bbox.Top, 16, 16, 0xc0);
 			}
 #endif
-			ami_gui_free_space_box(bbox);
 		}
 	}
 
@@ -2654,7 +2634,7 @@ static BOOL ami_gui_event(void *w)
 	struct gui_window_2 *gwin = (struct gui_window_2 *)w;
 	ULONG result, storage = 0, x, y, xs, ys, width = 800, height = 600;
 	uint16 code;
-	struct IBox *bbox;
+	struct IBox bbox;
 	struct InputEvent *ie;
 	struct Node *tabnode;
 	int nskey;
@@ -2678,8 +2658,8 @@ static BOOL ami_gui_event(void *w)
 					break;
 				}
 
-				x = (ULONG)((gwin->win->MouseX - bbox->Left));
-				y = (ULONG)((gwin->win->MouseY - bbox->Top));
+				x = (ULONG)((gwin->win->MouseX - bbox.Left));
+				y = (ULONG)((gwin->win->MouseY - bbox.Top));
 
 				ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 				ami_get_vscroll_pos(gwin, (ULONG *)&ys);
@@ -2687,28 +2667,26 @@ static BOOL ami_gui_event(void *w)
 				x += xs;
 				y += ys;
 
-				width=bbox->Width;
-				height=bbox->Height;
+				width=bbox.Width;
+				height=bbox.Height;
 
 				if(gwin->mouse_state & BROWSER_MOUSE_DRAG_ON)
 				{
 					if(ami_drag_icon_move() == TRUE) {
-						if((gwin->win->MouseX < bbox->Left) &&
-							((gwin->win->MouseX - bbox->Left) > -AMI_DRAG_THRESHOLD))
-							drag_x_move = gwin->win->MouseX - bbox->Left;
-						if((gwin->win->MouseX > (bbox->Left + bbox->Width)) &&
-							((gwin->win->MouseX - (bbox->Left + bbox->Width)) < AMI_DRAG_THRESHOLD))
-							drag_x_move = gwin->win->MouseX - (bbox->Left + bbox->Width);
-						if((gwin->win->MouseY < bbox->Top) &&
-							((gwin->win->MouseY - bbox->Top) > -AMI_DRAG_THRESHOLD))
-							drag_y_move = gwin->win->MouseY - bbox->Top;
-						if((gwin->win->MouseY > (bbox->Top + bbox->Height)) &&
-							((gwin->win->MouseY - (bbox->Top + bbox->Height)) < AMI_DRAG_THRESHOLD))
-							drag_y_move = gwin->win->MouseY - (bbox->Top + bbox->Height);
+						if((gwin->win->MouseX < bbox.Left) &&
+							((gwin->win->MouseX - bbox.Left) > -AMI_DRAG_THRESHOLD))
+							drag_x_move = gwin->win->MouseX - bbox.Left;
+						if((gwin->win->MouseX > (bbox.Left + bbox.Width)) &&
+							((gwin->win->MouseX - (bbox.Left + bbox.Width)) < AMI_DRAG_THRESHOLD))
+							drag_x_move = gwin->win->MouseX - (bbox.Left + bbox.Width);
+						if((gwin->win->MouseY < bbox.Top) &&
+							((gwin->win->MouseY - bbox.Top) > -AMI_DRAG_THRESHOLD))
+							drag_y_move = gwin->win->MouseY - bbox.Top;
+						if((gwin->win->MouseY > (bbox.Top + bbox.Height)) &&
+							((gwin->win->MouseY - (bbox.Top + bbox.Height)) < AMI_DRAG_THRESHOLD))
+							drag_y_move = gwin->win->MouseY - (bbox.Top + bbox.Height);
 					}
 				}
-
-				ami_gui_free_space_box(bbox);
 
 				if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 				{
@@ -2739,8 +2717,8 @@ static BOOL ami_gui_event(void *w)
 					return FALSE;
 				}
 
-				x = (ULONG)(gwin->win->MouseX - bbox->Left);
-				y = (ULONG)(gwin->win->MouseY - bbox->Top);
+				x = (ULONG)(gwin->win->MouseX - bbox.Left);
+				y = (ULONG)(gwin->win->MouseY - bbox.Top);
 
 				ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 				ami_get_vscroll_pos(gwin, (ULONG *)&ys);
@@ -2748,10 +2726,8 @@ static BOOL ami_gui_event(void *w)
 				x += xs;
 				y += ys;
 
-				width=bbox->Width;
-				height=bbox->Height;
-
-				ami_gui_free_space_box(bbox);
+				width=bbox.Width;
+				height=bbox.Height;
 
 				ami_update_quals(gwin);
 
@@ -3695,7 +3671,7 @@ static void gui_window_set_title(struct gui_window *g, const char *restrict titl
 
 static void gui_window_update_extent(struct gui_window *g)
 {
-	struct IBox *bbox;
+	struct IBox bbox;
 
 	if(!g || !g->bw) return;
 	if(browser_window_has_content(g->bw) == false) return;
@@ -3711,7 +3687,7 @@ static void gui_window_update_extent(struct gui_window *g)
 			browser_window_get_extents(g->bw, true, &width, &height);
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_VSCROLL],g->shared->win,NULL,
 				SCROLLER_Total, (ULONG)(height),
-				SCROLLER_Visible, bbox->Height,
+				SCROLLER_Visible, bbox.Height,
 			TAG_DONE);
 		}
 
@@ -3721,11 +3697,9 @@ static void gui_window_update_extent(struct gui_window *g)
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_HSCROLL],
 				g->shared->win, NULL,
 				SCROLLER_Total, (ULONG)(width),
-				SCROLLER_Visible, bbox->Width,
+				SCROLLER_Visible, bbox.Width,
 				TAG_DONE);
 		}
-
-		ami_gui_free_space_box(bbox);
 	}
 
 	ami_gui_scroller_update(g->shared);
@@ -3774,7 +3748,7 @@ static nserror amiga_window_invalidate_area(struct gui_window *g,
 static void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 {
 	struct Node *tabnode;
-	struct IBox *bbox;
+	struct IBox bbox;
 
 	/* Clear the last new tab list */
 	gwin->last_new_tab = NULL;
@@ -3802,8 +3776,7 @@ static void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 		RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
 			gwin->win, NULL, STRINGA_TextVal, "", TAG_DONE);
 
-		ami_plot_clear_bbox(gwin->win->RPort, bbox);
-		ami_gui_free_space_box(bbox);
+		ami_plot_clear_bbox(gwin->win->RPort, &bbox);
 		return;
 	}
 
@@ -3815,7 +3788,7 @@ static void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 	{
 		struct rect rect;
 
-		ami_plot_clear_bbox(gwin->win->RPort, bbox);
+		ami_plot_clear_bbox(gwin->win->RPort, &bbox);
 		gui_window_set_title(gwin->gw,
 				     browser_window_get_title(gwin->gw->bw));
 		gui_window_update_extent(gwin->gw);
@@ -3835,8 +3808,6 @@ static void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 		gui_window_set_icon(gwin->gw, gwin->gw->favicon);
 		gui_page_info_change(gwin->gw);
 	}
-
-	ami_gui_free_space_box(bbox);
 }
 
 void ami_quit_netsurf(void)
@@ -4529,7 +4500,7 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw, bool busy,
 		int x0, int y0, int x1, int y1)
 {
-	struct IBox *bbox;
+	struct IBox bbox;
 	ULONG sx, sy;
 
 	struct redraw_context ctx = {
@@ -4553,9 +4524,7 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 	}
 
 	ami_do_redraw_tiled(g->shared, busy, x0, y0,
-		x1 - x0, y1 - y0, sx, sy, bbox, &ctx);
-
-	ami_gui_free_space_box(bbox);
+		x1 - x0, y1 - y0, sx, sy, &bbox, &ctx);
 
 	return;
 }
@@ -4565,7 +4534,7 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 {
 	/* simplerefresh only */
 
-	struct IBox *bbox;
+	struct IBox bbox;
 	int sx, sy;
 	struct RegionRectangle *regrect;
 	struct rect r;
@@ -4582,10 +4551,10 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 	
 	BeginRefresh(gwin->win);
 
-	r.x0 = (gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox->Left) + sx - 1;
-	r.x1 = (gwin->win->RPort->Layer->DamageList->bounds.MaxX - bbox->Left) + sx + 2;
-	r.y0 = (gwin->win->RPort->Layer->DamageList->bounds.MinY - bbox->Top) + sy - 1;
-	r.y1 = (gwin->win->RPort->Layer->DamageList->bounds.MaxY - bbox->Top) + sy + 2;
+	r.x0 = (gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox.Left) + sx - 1;
+	r.x1 = (gwin->win->RPort->Layer->DamageList->bounds.MaxX - bbox.Left) + sx + 2;
+	r.y0 = (gwin->win->RPort->Layer->DamageList->bounds.MinY - bbox.Top) + sy - 1;
+	r.y1 = (gwin->win->RPort->Layer->DamageList->bounds.MaxY - bbox.Top) + sy + 2;
 
 	regrect = gwin->win->RPort->Layer->DamageList->RegionRectangle;
 
@@ -4593,10 +4562,10 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 
 	while(regrect)
 	{
-		r.x0 = (regrect->bounds.MinX - bbox->Left) + sx - 1;
-		r.x1 = (regrect->bounds.MaxX - bbox->Left) + sx + 2;
-		r.y0 = (regrect->bounds.MinY - bbox->Top) + sy - 1;
-		r.y1 = (regrect->bounds.MaxY - bbox->Top) + sy + 2;
+		r.x0 = (regrect->bounds.MinX - bbox.Left) + sx - 1;
+		r.x1 = (regrect->bounds.MaxX - bbox.Left) + sx + 2;
+		r.y0 = (regrect->bounds.MinY - bbox.Top) + sy - 1;
+		r.y1 = (regrect->bounds.MaxY - bbox.Top) + sy + 2;
 
 		regrect = regrect->Next;
 
@@ -4605,7 +4574,6 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 
 	EndRefresh(gwin->win, TRUE);
 
-	ami_gui_free_space_box(bbox);	
 	ami_reset_pointer(gwin);
 }
 
@@ -5735,7 +5703,7 @@ bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
 static void ami_do_redraw(struct gui_window_2 *gwin)
 {
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
-	struct IBox *bbox;
+	struct IBox bbox;
 	ULONG oldh = gwin->oldh, oldv=gwin->oldv;
 
 	if(browser_window_redraw_ready(gwin->gw->bw) == false) return;
@@ -5751,10 +5719,10 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 		return;
 	}
 
-	width=bbox->Width;
-	height=bbox->Height;
-	xoffset=bbox->Left;
-	yoffset=bbox->Top;
+	width=bbox.Width;
+	height=bbox.Height;
+	xoffset=bbox.Left;
+	yoffset=bbox.Top;
 
 	if(gwin->redraw_scroll)
 	{
@@ -5811,7 +5779,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 			.priv = browserglob
 		};
 
-		ami_do_redraw_tiled(gwin, true, hcurrent, vcurrent, width, height, hcurrent, vcurrent, bbox, &ctx);
+		ami_do_redraw_tiled(gwin, true, hcurrent, vcurrent, width, height, hcurrent, vcurrent, &bbox, &ctx);
 
 		/* Tell NetSurf not to bother with the next queued box redraw, as we've redrawn everything. */
 		ami_gui_window_update_box_deferred(gwin->gw, false);
@@ -5823,8 +5791,6 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 	gwin->redraw_scroll = false;
 	gwin->redraw_required = false;
 	gwin->new_content = false;
-
-	ami_gui_free_space_box(bbox);
 }
 
 
@@ -5869,7 +5835,7 @@ static bool gui_window_get_scroll(struct gui_window *g, int *restrict sx, int *r
 static nserror
 gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 {
-	struct IBox *bbox;
+	struct IBox bbox;
 	int width, height;
 	nserror res;
 	int sx = 0, sy = 0;
@@ -5896,15 +5862,13 @@ gui_window_set_scroll(struct gui_window *g, const struct rect *rect)
 
 	browser_window_get_extents(g->bw, false, &width, &height);
 
-	if(sx >= width - bbox->Width)
-		sx = width - bbox->Width;
-	if(sy >= height - bbox->Height)
-		sy = height - bbox->Height;
+	if(sx >= width - bbox.Width)
+		sx = width - bbox.Width;
+	if(sy >= height - bbox.Height)
+		sy = height - bbox.Height;
 
-	if(width <= bbox->Width) sx = 0;
-	if(height <= bbox->Height) sy = 0;
-
-	ami_gui_free_space_box(bbox);
+	if(width <= bbox.Width) sx = 0;
+	if(height <= bbox.Height) sy = 0;
 
 	if(g == g->shared->gw) {
 		if(g->shared->objects[GID_VSCROLL]) {
@@ -6090,7 +6054,7 @@ HOOKF(uint32, ami_gui_browser_render_hook, APTR, space, struct gpRender *)
 static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
-	struct IBox *bbox;
+	struct IBox bbox;
 	int xs,ys;
 
 	if(!g) return;
@@ -6107,21 +6071,18 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 		return;
 	}
 
-	if((y-ys+height) > (bbox->Height)) height = bbox->Height-y+ys;
+	if((y-ys+height) > (bbox.Height)) height = bbox.Height-y+ys;
 
-	if(((x-xs) <= 0) || ((x-xs+2) >= (bbox->Width)) || ((y-ys) <= 0) || ((y-ys) >= (bbox->Height))) {
-		ami_gui_free_space_box(bbox);
+	if(((x-xs) <= 0) || ((x-xs+2) >= (bbox.Width)) || ((y-ys) <= 0) || ((y-ys) >= (bbox.Height))) {
 		return;
 	}
 
 	g->c_w = 2;
 
 	SetDrMd(g->shared->win->RPort,COMPLEMENT);
-	RectFill(g->shared->win->RPort, x + bbox->Left - xs, y + bbox->Top - ys,
-		x + bbox->Left + g->c_w - xs, y+bbox->Top + height - ys);
+	RectFill(g->shared->win->RPort, x + bbox.Left - xs, y + bbox.Top - ys,
+		x + bbox.Left + g->c_w - xs, y+bbox.Top + height - ys);
 	SetDrMd(g->shared->win->RPort,JAM1);
-
-	ami_gui_free_space_box(bbox);
 
 	g->c_x = x;
 	g->c_y = y;
@@ -6193,7 +6154,7 @@ static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 
 bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *restrict x, ULONG *restrict y)
 {
-	struct IBox *bbox;
+	struct IBox bbox;
 	ULONG xs, ys;
 	struct browser_window_features data;
 
@@ -6203,12 +6164,10 @@ bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *restrict x, ULONG *
 	}
 
 	ami_get_hscroll_pos(gwin, (ULONG *)&xs);
-	*x = *x - (bbox->Left) +xs;
+	*x = *x - (bbox.Left) +xs;
 
 	ami_get_vscroll_pos(gwin, (ULONG *)&ys);
-	*y = *y - (bbox->Top) + ys;
-
-	ami_gui_free_space_box(bbox);
+	*y = *y - (bbox.Top) + ys;
 
 	browser_window_get_features(gwin->gw->bw, *x, *y, &data);
 

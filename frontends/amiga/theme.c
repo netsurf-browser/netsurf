@@ -431,7 +431,7 @@ void gui_window_start_throbber(struct gui_window *g)
 
 void gui_window_stop_throbber(struct gui_window *g)
 {
-	struct IBox *bbox;
+	struct IBox bbox;
 
 	if(!g) return;
 	if(nsoption_bool(kiosk_mode)) return;
@@ -453,11 +453,10 @@ void gui_window_stop_throbber(struct gui_window *g)
 
 		if(throbber != NULL) {
 			BltBitMapRastPort(throbber, 0, 0, ami_gui_get_window(g)->RPort,
-				bbox->Left, bbox->Top, 
+				bbox.Left, bbox.Top, 
 				ami_theme_throbber_get_width(), ami_theme_throbber_get_height(),
 				0x0C0);
 		}
-		ami_gui_free_space_box(bbox);
 	}
 
 	ami_gui_set_throbbing(g, false);
@@ -467,7 +466,7 @@ void gui_window_stop_throbber(struct gui_window *g)
 static void ami_throbber_update(void *p)
 {
 	struct gui_window *g = (struct gui_window *)p;
-	struct IBox *bbox;
+	struct IBox bbox;
 	int frame = 0;
 
 	if(!g) return;
@@ -490,8 +489,8 @@ static void ami_throbber_update(void *p)
 #ifdef __amigaos4__
 			BltBitMapTags(BLITA_SrcX, ami_theme_throbber_get_width() * frame,
 						BLITA_SrcY, 0,
-						BLITA_DestX, bbox->Left,
-						BLITA_DestY, bbox->Top,
+						BLITA_DestX, bbox.Left,
+						BLITA_DestY, bbox.Top,
 						BLITA_Width, ami_theme_throbber_get_width(),
 						BLITA_Height, ami_theme_throbber_get_height(),
 						BLITA_Source, throbber,
@@ -503,12 +502,11 @@ static void ami_throbber_update(void *p)
 #else
 			BltBitMapRastPort(throbber, ami_theme_throbber_get_width() * frame,
 				0, ami_gui_get_window(g)->RPort,
-				bbox->Left, bbox->Top,
+				bbox.Left, bbox.Top,
 				ami_theme_throbber_get_width(), ami_theme_throbber_get_height(),
 				0xC0);
 #endif
 		}
-		ami_gui_free_space_box(bbox);
 	}
 
 	if(frame > 0) ami_throbber_redraw_schedule(throbber_update_interval, g);

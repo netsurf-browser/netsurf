@@ -90,17 +90,15 @@ ami_cw_scroller_top(struct ami_corewindow *ami_cw,
 static void
 ami_cw_window_size(struct ami_corewindow *ami_cw, int *width, int *height)
 {
-	struct IBox *bbox;
+	struct IBox bbox;
 
 	if(ami_gui_get_space_box((Object *)ami_cw->objects[GID_CW_DRAW], &bbox) != NSERROR_OK) {
 		amiga_warn_user("NoMemory", "");
 		return;
 	}
 
-	*width = bbox->Width;
-	*height = bbox->Height;
-
-	ami_gui_free_space_box(bbox);
+	*width = bbox.Width;
+	*height = bbox.Height;
 }
 
 
@@ -158,7 +156,7 @@ ami_cw_mouse_pos(struct ami_corewindow *ami_cw, int *restrict x, int *restrict y
 {
 	int16 xm, ym;
 	ULONG xs, ys;
-	struct IBox *bbox;
+	struct IBox bbox;
 
 	xm = ami_cw->win->MouseX;
 	ym = ami_cw->win->MouseY;
@@ -168,13 +166,12 @@ ami_cw_mouse_pos(struct ami_corewindow *ami_cw, int *restrict x, int *restrict y
 		return false;
 	}
 
-	xm -= bbox->Left;
-	ym -= bbox->Top;
+	xm -= bbox.Left;
+	ym -= bbox.Top;
 
-	if((xm < 0) || (ym < 0) || (xm > bbox->Width) || (ym > bbox->Height))
+	if((xm < 0) || (ym < 0) || (xm > bbox.Width) || (ym > bbox.Height))
 		return false;
 
-	ami_gui_free_space_box(bbox);
 	ami_cw_scroller_top(ami_cw, &xs, &ys);
 
 	xm += xs;
@@ -220,7 +217,7 @@ ami_cw_key(struct ami_corewindow *ami_cw, int nskey)
 static void
 ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 {
-	struct IBox *bbox;
+	struct IBox bbox;
 	ULONG pos_x, pos_y;
 	struct rect draw_rect;
 	int tile_size_x;
@@ -245,8 +242,8 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 
 	ami_cw_scroller_top(ami_cw, &pos_x, &pos_y);
 
-	if(x - (LONG)pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
-	if(y - (LONG)pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
+	if(x - (LONG)pos_x + width > bbox.Width) width = bbox.Width - (x - pos_x);
+	if(y - (LONG)pos_y + height > bbox.Height) height = bbox.Height - (y - pos_y);
 
 	if(x < (LONG)pos_x) {
 		width -= pos_x - x;
@@ -284,20 +281,19 @@ ami_cw_redraw_rect(struct ami_corewindow *ami_cw, struct rect *r)
 					BLITA_SrcY, 0,
 					BLITA_DestType, BLITT_RASTPORT, 
 					BLITA_Dest, ami_cw->win->RPort,
-					BLITA_DestX, bbox->Left + tile_x - pos_x,
-					BLITA_DestY, bbox->Top + tile_y - pos_y,
+					BLITA_DestX, bbox.Left + tile_x - pos_x,
+					BLITA_DestY, bbox.Top + tile_y - pos_y,
 					BLITA_Width, tile_w,
 					BLITA_Height, tile_h,
 					TAG_DONE);
 #else
 			BltBitMapRastPort(ami_plot_ra_get_bitmap(ami_cw->gg), 0, 0,
-					ami_cw->win->RPort, bbox->Left + tile_x - pos_x, bbox->Top + tile_y - pos_y,
+					ami_cw->win->RPort, bbox.Left + tile_x - pos_x, bbox.Top + tile_y - pos_y,
 					tile_w, tile_h, 0xC0);
 #endif
 		}
 	}
 
-	ami_gui_free_space_box(bbox);
 	ami_clearclipreg(ami_cw->gg);
 }
 
@@ -356,7 +352,7 @@ ami_cw_redraw(struct ami_corewindow *ami_cw, const struct rect *restrict r)
 	struct rect new_rect;
 
 	if(r == NULL) {
-		struct IBox *bbox;
+		struct IBox bbox;
 		if(ami_gui_get_space_box((Object *)ami_cw->objects[GID_CW_DRAW], &bbox) != NSERROR_OK) {
 			amiga_warn_user("NoMemory", "");
 			return;
@@ -365,10 +361,8 @@ ami_cw_redraw(struct ami_corewindow *ami_cw, const struct rect *restrict r)
 		new_rect.x0 = 0;
 		new_rect.y0 = 0;
 		ami_cw_coord_amiga_to_ns(ami_cw, &new_rect.x0, &new_rect.y0);
-		new_rect.x1 = new_rect.x0 + bbox->Width;
-		new_rect.y1 = new_rect.y0 + bbox->Height;
-
-		ami_gui_free_space_box(bbox);
+		new_rect.x1 = new_rect.x0 + bbox.Width;
+		new_rect.y1 = new_rect.y0 + bbox.Height;
 
 		r = &new_rect;
 	}

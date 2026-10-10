@@ -129,14 +129,7 @@ void ami_gui_close_inactive_tabs(struct gui_window_2 *gwin);
  * @param bbox A pointer to a struct IBox *.
  * @return error status.
  */
-nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox);
-
-/**
- * Free any data obtained via ami_gui_get_space_box().
- *
- * @param bbox A pointer to a struct IBox.
- */
-void ami_gui_free_space_box(struct IBox *bbox);
+nserror ami_gui_get_space_box(Object *obj, struct IBox *bbox);
 
 /**
  * Get shared message port
