@@ -122,14 +122,14 @@ static void ami_font_dfcache_cleanup(struct MinList *ami_font_dfcache_list)
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 		if(node == (struct nsObject *)in_use_font) continue;
 		fnode = node->objstruct;
-		GetSysTime((struct timeval *)&curtime);
-		SubTime((struct timeval *)&curtime, (struct timeval *)&fnode->lastused);
-		if(curtime.tv_secs > 300)
+		GetSysTime(&curtime);
+		SubTime(&curtime, &fnode->lastused);
+		if(curtime.Seconds > 300)
 		{
 			NSLOG(netsurf, INFO,
 			      "Freeing %s not used for %d seconds",
 			      node->dtz_Node.ln_Name,
-			      curtime.tv_secs);
+			      curtime.Seconds);
 			DelObject(node);
 		}
 	} while((node=nnode));
