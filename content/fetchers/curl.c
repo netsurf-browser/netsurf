@@ -39,6 +39,8 @@
 #include <time.h>
 #include <sys/stat.h>
 
+#include <curl/curl.h>
+
 #include <libwapcaplet/libwapcaplet.h>
 #include <nsutils/time.h>
 
@@ -268,7 +270,7 @@ struct cache_handle {
 };
 
 /** Global cURL multi handle. */
-CURLM *fetch_curl_multi;
+static CURLM *fetch_curl_multi;
 
 /** Curl handle with default options set; not used for transfers. */
 static CURL *fetch_blank_curl;
