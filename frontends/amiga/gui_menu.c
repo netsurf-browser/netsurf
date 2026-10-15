@@ -84,14 +84,14 @@
 #ifdef __amigaos4__
 static struct Menu *restrict gui_menu = NULL;
 static int gui_menu_count = 0;
-struct ami_menu_data *gui_menu_data[AMI_MENU_AREXX_MAX + 1];
+static struct ami_menu_data *gui_menu_data[AMI_MENU_AREXX_MAX + 1];
 #endif
 
 static bool ami_menu_check_toggled = false;
 static bool menu_quit = false;
 
 static nserror ami_menu_scan(struct ami_menu_data **md);
-void ami_menu_arexx_scan(struct ami_menu_data **md);
+static void ami_menu_arexx_scan(struct ami_menu_data **md);
 
 /*
  * The below functions are called automatically by window.class when menu items are selected.
@@ -559,11 +559,11 @@ ULONG ami_gui_menu_number(int item)
 		break;
 
 		case M_UNDO:
-			menu_num = FULLMENUNUM(1,8,0);
+			menu_num = FULLMENUNUM(1,7,0);
 		break;
 
 		case M_REDO:
-			menu_num = FULLMENUNUM(1,9,0);
+			menu_num = FULLMENUNUM(1,8,0);
 		break;
 
 		case M_FIND:
@@ -589,7 +589,7 @@ ULONG ami_gui_menu_number(int item)
 		default:
 			NSLOG(netsurf, INFO,
 			      "WARNING: Unrecognised menu item %d", item);
-			menu_num = 0;
+			menu_num = MENUNULL;
 		break;
 	}
 

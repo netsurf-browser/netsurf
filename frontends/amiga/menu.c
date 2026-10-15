@@ -73,7 +73,8 @@ bool ami_menu_get_selected(struct Menu *menu, struct IntuiMessage *msg)
 		if(state & MS_CHECKED) checked = true;
 #endif	
 	} else {
-		if(ItemAddress(menu, msg->Code)->Flags & CHECKED) checked = true;
+		struct MenuItem *item = ItemAddress(menu, msg->Code);
+		if(item && (item->Flags & CHECKED)) checked = true;
 	}
 
 	return checked;
@@ -94,7 +95,9 @@ void ami_menu_free_lab_item(struct ami_menu_data **md, int i)
 	}
 
 	if(md[i]->menukey != NULL) free(md[i]->menukey);
-
+	if(md[i]->menuicon != NULL) free(md[i]->menuicon);
+	
+	md[i]->menuicon = NULL;
 	md[i]->menulab = NULL;
 	md[i]->menuobj = NULL;
 	md[i]->menukey = NULL;
@@ -116,7 +119,10 @@ void ami_menu_alloc_item(struct ami_menu_data **md, int num, UBYTE type,
 			const char *restrict label, const char *restrict key, const char *restrict icon,
 			void *restrict func, void *restrict hookdata, UWORD flags)
 {
+	if(md[num] != NULL) free(md[num]);
 	md[num] = calloc(1, sizeof(struct ami_menu_data));
+	if(md[num] == NULL) return;
+	
 	md[num]->menutype = type;
 	md[num]->flags = flags;
 	
@@ -126,8 +132,9 @@ void ami_menu_alloc_item(struct ami_menu_data **md, int num, UBYTE type,
 		md[num]->menulab = NM_BARLABEL;
 		icon = NULL;
 	} else { /* horrid non-generic stuff */
-		if((num >= AMI_MENU_AREXX) && (num < AMI_MENU_AREXX_MAX)) {
-			md[num]->menulab = strdup(label);		
+		if(((num >= AMI_MENU_AREXX) && (num < AMI_MENU_AREXX_MAX)) ||
+		((num >= AMI_MENU_HOTLIST) && (num < AMI_MENU_HOTLIST_MAX))) {
+			md[num]->menulab = ami_utf8_easy(label);		
 		} else {
 			md[num]->menulab = ami_utf8_easy(messages_get(label));
 		}
@@ -244,29 +251,37 @@ static int ami_menu_layout_mc_recursive(Object *menu_parent, struct ami_menu_dat
 					MA_Label, md[j]->menulab,
 					TAG_DONE);
 			} else {
+				Object *menu_img = NULL;
+				
+				if(md[j]->menuicon) {
+					menu_img = BitMapObj,
+						IA_Scalable, TRUE,
+						BITMAP_Screen, ami_gui_get_screen(),
+						BITMAP_SourceFile, md[j]->menuicon,
+						BITMAP_Masking, TRUE,
+					BitMapEnd;
+				}
+				
+				
 				menu_item = NewObject(NULL, "menuclass",
 					MA_Type, T_ITEM,
 					MA_ID, j,
 					MA_Label, md[j]->menulab,
-					MA_Image,
-						BitMapObj,
-							IA_Scalable, TRUE,
-							BITMAP_Screen, ami_gui_get_screen(),
-							BITMAP_SourceFile, md[j]->menuicon,
-							BITMAP_Masking, TRUE,
-						BitMapEnd,
+					MA_Image, menu_img,
 					MA_Key, md[j]->menukey,
 					MA_UserData, &md[j]->menu_hook, /* NB: Intentionally UserData */
-					MA_Disabled, (md[j]->flags & NM_ITEMDISABLED),
-					MA_Selected, (md[j]->flags & CHECKED),
-					MA_Toggle, (md[j]->flags & MENUTOGGLE),
+					MA_Disabled, (md[j]->flags & NM_ITEMDISABLED) ? TRUE : FALSE,
+					MA_Selected, (md[j]->flags & CHECKED) ? TRUE : FALSE,
+					MA_Toggle, (md[j]->flags & MENUTOGGLE) ? TRUE : FALSE,
 					TAG_DONE);
 			}
 
-			NSLOG(netsurf, DEEPDEBUG,
-			      "Adding item %p ID %d (%s) to parent %p",
-			      menu_item, j, md[j]->menulab, menu_parent);
-			IDoMethod(menu_parent, OM_ADDMEMBER, menu_item);
+			if(menu_item != NULL) {
+				NSLOG(netsurf, DEEPDEBUG,
+					  "Adding item %p ID %d (%s) to parent %p",
+					  menu_item, j, (md[j]->menulab == NM_BARLABEL) ? "" : md[j]->menulab, menu_parent);
+				IDoMethod(menu_parent, OM_ADDMEMBER, menu_item);
+			}
 			continue;
 		} else if (md[j]->menutype > level) {
 			j = ami_menu_layout_mc_recursive(menu_item, md, md[j]->menutype, j, max);

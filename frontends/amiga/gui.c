@@ -755,7 +755,7 @@ static bool ami_gui_map_filename(char **remapped, const char *restrict path,
 	char *restrict realfname;
 	bool found = false;
 
-	netsurf_mkpath(&mapfile, &mapfile_size, 2, path, map);
+	if(netsurf_mkpath(&mapfile, &mapfile_size, 2, path, map) != NSERROR_OK) return false;
 
 	if(mapfile == NULL) return false;
 
@@ -797,12 +797,12 @@ static bool ami_gui_map_filename(char **remapped, const char *restrict path,
 static bool ami_gui_check_resource(char *fullpath, const char *file)
 {
 	bool found = false;
-	char *remapped;
+	char *remapped = NULL;
 	BPTR lock = 0;
 	size_t fullpath_len = 1024;
 
 	ami_gui_map_filename(&remapped, fullpath, file, "Resource.map");
-	netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
+	if(netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped) != NSERROR_OK) return false;
 
 	lock = Lock(fullpath, ACCESS_READ);
 	if(lock) {
@@ -811,7 +811,7 @@ static bool ami_gui_check_resource(char *fullpath, const char *file)
 	}
 
 	if(found) NSLOG(netsurf, INFO, "Found %s", fullpath);
-	free(remapped);
+	if(remapped) free(remapped);
 
 	return found;
 }
@@ -822,7 +822,6 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	int i;
 	bool found = false;
 	char *remapped = NULL;
-	size_t fullpath_len = 1024;
 
 	/* Check NetSurf user data area first */
 
@@ -844,14 +843,18 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	locale = OpenLocale(NULL);
 
 	for(i=0;i<10;i++) {
+		size_t fullpath_len = 1024;
 		strcpy(fullpath, "PROGDIR:Resources/");
-
+		
 		if(locale->loc_PrefLanguages[i]) {
 			if(ami_gui_map_filename(&remapped, "PROGDIR:Resources",
 					locale->loc_PrefLanguages[i], "LangNames") == true) {
-				netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
+				if(netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped) != NSERROR_OK) {
+					CloseLocale(locale);
+					return false;
+				}
 				found = ami_gui_check_resource(fullpath, file);
-				free(remapped);
+				if(remapped) free(remapped);
 			}
 		} else {
 			continue;
@@ -1226,7 +1229,7 @@ static void ami_openscreen(void)
 				{
 					char *modeid = malloc(20);
 					id = screenmodereq->sm_DisplayID;
-					sprintf(modeid, "0x%lx", id);
+					snprintf(modeid, 19, "0x%lx", id);
 					nsoption_set_charp(screen_modeid, modeid);
 					ami_nsoption_write();
 				}
@@ -3192,24 +3195,25 @@ static BOOL ami_gui_event(void *w)
 				struct bitmap *bm = NULL;
 				browser_window_history_get_thumbnail(gwin->gw->bw,
 								     &bm);
-				gwin->dobj = amiga_icon_from_bitmap(bm);
-				amiga_icon_superimpose_favicon_internal(gwin->gw->favicon,
-					gwin->dobj);
-				HideWindow(gwin->win);
-				if(strlen(gwin->wintitle) > 23) {
-					strncpy(gwin->icontitle, gwin->wintitle, 20);
-					gwin->icontitle[20] = '.';
-					gwin->icontitle[21] = '.';
-					gwin->icontitle[22] = '.';
-					gwin->icontitle[23] = '\0';
-				} else {
-					strlcpy(gwin->icontitle, gwin->wintitle, 23);
+				if(gwin->dobj = amiga_icon_from_bitmap(bm)) {
+					amiga_icon_superimpose_favicon_internal(gwin->gw->favicon,
+						gwin->dobj);
+					HideWindow(gwin->win);
+					if(gwin->wintitle && (strlen(gwin->wintitle) > 23)) {
+						strncpy(gwin->icontitle, gwin->wintitle, 20);
+						gwin->icontitle[20] = '.';
+						gwin->icontitle[21] = '.';
+						gwin->icontitle[22] = '.';
+						gwin->icontitle[23] = '\0';
+					} else {
+						strlcpy(gwin->icontitle, gwin->wintitle, 23);
+					}
+					gwin->appicon = AddAppIcon((ULONG)gwin->objects[OID_MAIN],
+										(ULONG)gwin, gwin->icontitle, appport,
+										0, gwin->dobj, NULL);
+					if(gwin->appicon == NULL) amiga_icon_free(gwin->dobj);
+					cur_gw = NULL;
 				}
-				gwin->appicon = AddAppIcon((ULONG)gwin->objects[OID_MAIN],
-									(ULONG)gwin, gwin->icontitle, appport,
-									0, gwin->dobj, NULL);
-
-				cur_gw = NULL;
 			}
 			break;
 #endif
@@ -3350,7 +3354,7 @@ static void ami_handle_appmsg(void)
 			{
 				if((appwinargs = &appmsg->am_ArgList[i]))
 				{
-					if((filename = malloc(1024)))
+					if((filename = calloc(1024, 1)))
 					{
 						if(appwinargs->wa_Lock)
 						{
@@ -4027,7 +4031,7 @@ static bool ami_gui_hotlist_add(void *userdata, int level, int item,
 	char *utf8title = NULL;
 
 	if(level != 1) return false;
-	if(item > AMI_GUI_TOOLBAR_MAX) return false;
+	if(item >= AMI_GUI_TOOLBAR_MAX) return false;
 	if(is_folder == true) return false;
 
 	if(utf8_to_local_encoding(title,
@@ -6574,7 +6578,7 @@ int main(int argc, char** argv)
 	}
 
 	ami_mime_init("PROGDIR:Resources/mimetypes");
-	sprintf(temp, "%s/mimetypes.user", current_user_dir);
+	snprintf(temp, 1023, "%s/mimetypes.user", current_user_dir);
 	ami_mime_init(temp);
 
 #ifdef __amigaos4__

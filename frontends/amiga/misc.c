@@ -288,13 +288,14 @@ static nserror amiga_vmkpath(char **str, size_t *size, size_t nelm, va_list ap)
 	const char *elm[16];
 	size_t elm_len[16];
 	size_t elm_idx;
-	char *fname;
+	char *fname = NULL;
 	size_t fname_len = 0;
 
 	/* check the parameters are all sensible */
 	if ((nelm == 0) || (nelm > 16)) {
 		return NSERROR_BAD_PARAMETER;
 	}
+	
 	if ((*str != NULL) && (size == NULL)) {
 		/* if the caller is providing the buffer they must say
 		 * how much space is available.
@@ -336,7 +337,8 @@ static nserror amiga_vmkpath(char **str, size_t *size, size_t nelm, va_list ap)
 	/* add the remaining elements */
 	for (elm_idx = 1; elm_idx < nelm; elm_idx++) {
 		if (!AddPart(fname, elm[elm_idx], fname_len)) {
-			break;
+			if((*str == NULL) && (fname != NULL)) free(fname);
+			return NSERROR_NOSPACE;
 		}
 	}
 
