@@ -1764,13 +1764,6 @@ void ami_gui_opts_open(void)
 		ami_gui_win_list_add(gow, AMINS_GUIOPTSWINDOW, &ami_guiopts_table);
 	}
 	ami_utf8_free(homepage_url_lc);
-
-	/* Free font names; these are copied so safe to free here */
-	if(fontsans.ta_Name) free (fontsans.ta_Name);
-	if(fontserif.ta_Name) free (fontserif.ta_Name);
-	if(fontmono.ta_Name) free (fontmono.ta_Name);
-	if(fontcursive.ta_Name) free (fontcursive.ta_Name);
-	if(fontfantasy.ta_Name) free (fontfantasy.ta_Name);
 }
 
 static void ami_gui_opts_use(bool save)
