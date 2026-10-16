@@ -26,6 +26,7 @@
 #include "utils/errors.h"
 #include "utils/file.h"
 #include "utils/inet.h"
+#include "utils/log.h"
 #include "netsurf/bitmap.h"
 #include "content/hlcache.h"
 #include "content/backing_store.h"
@@ -546,12 +547,16 @@ static char *gui_default_mimetype(const char *path)
 
 static int gui_default_socket_open(int domain, int type, int protocol)
 {
-	return (int) socket(domain, type, protocol);
+	int sock = (int) socket(domain, type, protocol);
+	NSLOG(netsurf, INFO, "socket_open: (%d, %d, %d) => %d", domain, type, protocol, sock);
+	return sock;
 }
 
 static int gui_default_socket_close(int fd)
 {
-	return (int) ns_close_socket(fd);
+	int result = (int) ns_close_socket(fd);
+	NSLOG(netsurf, INFO, "socket_close: (%d) => %d", fd, result);
+	return result;
 }
 
 /** verify fetch table is valid */

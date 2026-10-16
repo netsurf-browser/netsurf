@@ -28,7 +28,7 @@
 #include "utils/log.h"
 
 /** flag to enable verbose logging */
-bool verbose_log = false;
+bool verbose_log = true;
 
 /** The stream to which logging is sent */
 static FILE *logfile;

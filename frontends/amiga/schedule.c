@@ -259,12 +259,22 @@ static bool ami_scheduler_run(struct nscallback *nscb)
 	void (*callback)(void *p);
 	void *p;
 
+
 	callback = nscb->callback;
 	p = nscb->p;
 
+	NSLOG(netsurf, INFO, "Removing callback to dispatch %p %p(%p)", nscb, callback, p);
+
 	schedule_remove(callback, p, false); /* this does a lookup as we don't know if we're the first item on the heap */
 
+	ami_schedule_dump();
+
+	NSLOG(netsurf, INFO, "Dispatching scheduled callback %p %p(%p)", nscb, callback, p);
+
 	callback(p);
+
+	NSLOG(netsurf, INFO, "Dispatched scheduled callback %p %p(%p)", nscb, callback, p);
+
 	return true;
 }
 
@@ -331,12 +341,15 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 {
 	struct nscallback *nscb;
 
+	NSLOG(netsurf, INFO, "Scheduling callback %p(%p) at t+%d", callback, p, t);
+
 	if(t == 0) t = 1;
 
 	if(schedule_list == NULL) return NSERROR_INIT_FAILED;
 	if(t < 0) return schedule_remove(callback, p, true);
 
 	if ((nscb = ami_schedule_locate(callback, p, false))) {
+		NSLOG(netsurf, INFO, "Rescheduling callback %p(%p) => %p", callback, p, nscb);
 		return ami_schedule_reschedule(nscb, t);
 	}
 
@@ -359,6 +372,8 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 	nscb->p = p;
 
 	pblHeapInsert(schedule_list, nscb);
+
+	NSLOG(netsurf, INFO, "Scheduled callback %p(%p) => %p", callback, p, nscb);
 
 	return NSERROR_OK;
 

@@ -1647,7 +1647,7 @@ static void fetch_curl_poll(lwc_string *scheme_ignored)
 	CURLMcode codem;
 	CURLMsg *curl_msg;
 
-	if (nsoption_bool(suppress_curl_debug) == false) {
+	if (true /*nsoption_bool(suppress_curl_debug) == false*/) {
 		fd_set read_fd_set, write_fd_set, exc_fd_set;
 		int max_fd = -1;
 		int i;
@@ -2046,11 +2046,14 @@ nserror fetch_curl_register(void)
 
 	SETOPT(CURLOPT_ERRORBUFFER, fetch_error_buffer);
 	SETOPT(CURLOPT_DEBUGFUNCTION, fetch_curl_debug);
-	if (nsoption_bool(suppress_curl_debug)) {
-		SETOPT(CURLOPT_VERBOSE, 0);
-	} else {
+	//if (nsoption_bool(suppress_curl_debug)) {
+	//	SETOPT(CURLOPT_VERBOSE, 0);
+	//} else {
 		SETOPT(CURLOPT_VERBOSE, 1);
-	}
+#if LIBCURL_VERSION_NUM >= 0x080300 /* 8.3.0 */
+		curl_global_trace("all");
+#endif
+	//}
 
 	/* Currently we explode if curl uses HTTP2, so force 1.1. */
 	SETOPT(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);

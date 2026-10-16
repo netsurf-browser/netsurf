@@ -97,9 +97,16 @@
 
 /* newlib includes */
 #include <math.h>
+#include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#ifdef __amigaos4__
+/* Just declare dup2 manually as unistd.h clashes with bsdsocket */
+extern int dup2(int oldfd, int newfd);
+#else
+#include <unistd.h>
+#endif
 
 /* NetSurf core includes */
 #include "utils/log.h"
@@ -3544,13 +3551,25 @@ void ami_get_msg(void)
 	uint32 signalmask = winsignal | appsig | schedulesig | rxsig |
 				printsig | applibsig | helpsignal;
 
+	NSLOG(netsurf, INFO, "Calling fetch_fdset");
+
 	if ((fetch_fdset(&read_fd_set, &write_fd_set, &except_fd_set, &max_fd) == NSERROR_OK) &&
 			(max_fd != -1)) {
 		/* max_fd is the highest fd in use, but waitselect() needs to know how many
 		 * are in use, so we add 1. */
+		int fd;
+		NSLOG(netsurf, INFO, "have at most %d sockets to wait on", max_fd+1);
+		for (fd = 0; fd <= max_fd; fd++) {
+			NSLOG(netsurf, INFO, "fd %d: r=%d w=%d x=%d", fd, FD_ISSET(fd, &read_fd_set), FD_ISSET(fd, &write_fd_set), FD_ISSET(fd, &except_fd_set));
+		}
 
 		if (waitselect(max_fd + 1, &read_fd_set, &write_fd_set, &except_fd_set,
 				NULL, (ULONG *)&signalmask) != -1) {
+			NSLOG(netsurf, INFO, "waitselect() successful");
+			for (fd = 0; fd <= max_fd; fd++) {
+				NSLOG(netsurf, INFO, "fd %d: r=%d w=%d x=%d", fd, FD_ISSET(fd, &read_fd_set), FD_ISSET(fd, &write_fd_set), FD_ISSET(fd, &except_fd_set));
+			}
+
 			signal = signalmask;
 		} else {
 			NSLOG(netsurf, INFO, "waitselect() returned error");
@@ -3564,36 +3583,61 @@ void ami_get_msg(void)
 		}
 	} else {
 		/* If fetcher_fdset fails or no network activity, do it the old fashioned way. */
+		NSLOG(netsurf, INFO, "nicht zu machen: waiting");
 		signalmask |= ctrlcsig;
 		signal = Wait(signalmask);
 	}
 
-	if(signal & winsignal)
+	NSLOG(netsurf, INFO, "ui signal: %08x", signal);
+
+	if(signal & winsignal) {
+		NSLOG(netsurf, INFO, "draining UI message queue");
 		while(ami_handle_msg());
+		NSLOG(netsurf, INFO, "drained UI message queue");
+	}
 
-	if(signal & appsig)
+	if(signal & appsig) {
+		NSLOG(netsurf, INFO, "handling application message");
 		ami_handle_appmsg();
+		NSLOG(netsurf, INFO, "handled application message");
+	}
 
-	if(signal & rxsig)
+	if(signal & rxsig) {
+		NSLOG(netsurf, INFO, "handling arexx message");
 		ami_arexx_handle();
+		NSLOG(netsurf, INFO, "handled arexx message");
+	}
 
-	if(signal & applibsig)
+	if(signal & applibsig) {
+		NSLOG(netsurf, INFO, "handling applib message");
 		ami_handle_applib();
+		NSLOG(netsurf, INFO, "handling applib message");
+	}
 
 	if(signal & printsig) {
+		NSLOG(netsurf, INFO, "handling print message");
 		while(GetMsg(printmsgport));  //ReplyMsg
 		ami_print_cont();
+		NSLOG(netsurf, INFO, "handled print message");
 	}
 
 	if(signal & schedulesig) {
+		NSLOG(netsurf, INFO, "handling scheduler message");
 		ami_schedule_handle(schedulermsgport);
+		NSLOG(netsurf, INFO, "handled scheduler message");
 	}
 
-	if(signal & helpsignal)
+	if(signal & helpsignal) {
+		NSLOG(netsurf, INFO, "handling help message");
 		ami_help_process();
+		NSLOG(netsurf, INFO, "handled help message");
+	}
 
-	if(signal & ctrlcsig)
+	if(signal & ctrlcsig) {
+		NSLOG(netsurf, INFO, "handling quit message");
 		ami_quit_netsurf_delayed();
+		NSLOG(netsurf, INFO, "handled quit message");
+	}
 }
 
 static void ami_change_tab(struct gui_window_2 *gwin, int direction)
@@ -6511,6 +6555,11 @@ int main(int argc, char** argv)
 	nserror ret;
 	int nargc = 0;
 	char *nargv = NULL;
+
+	int lfd = open("PROGDIR:log.txt", O_CREAT | O_TRUNC | O_WRONLY, 00700);
+	assert(lfd != -1);
+	int d2ret = dup2(lfd, 2); // stderr -> file, kthx
+	assert(d2ret != -1);
 
 	struct netsurf_table amiga_table = {
 		.misc = &amiga_misc_table,
