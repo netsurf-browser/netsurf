@@ -24,6 +24,9 @@
 
 #include <string.h>
 
+#include <dom/dom.h>
+#include <dom/walk.h>
+
 #include "utils/config.h"
 #include "utils/utils.h"
 #include "utils/corestrings.h"
@@ -573,6 +576,32 @@ static void html_texty_element_update(html_content *htmlc, dom_node *node)
 	html__redraw_a_box(htmlc, box);
 }
 
+static enum dom_walk_cmd subtree_walk_cb(enum dom_walk_stage stage,
+		dom_node_type type, dom_node *node, void *pw)
+{
+	html_content *htmlc = pw;
+	dom_exception exc;
+
+	if (stage == DOM_WALK_STAGE_ENTER && type == DOM_ELEMENT_NODE) {
+		dom_html_element_type tag_type;
+
+		exc = dom_html_element_get_tag_type(node, &tag_type);
+		if (exc != DOM_NO_ERR) {
+			tag_type = DOM_HTML_ELEMENT_TYPE__UNKNOWN;
+		}
+
+		switch (tag_type) {
+		case DOM_HTML_ELEMENT_TYPE_SCRIPT:
+			dom_SCRIPT_showed_up(htmlc,
+					     (dom_html_script_element *)node);
+			break;
+		default:
+			break;
+		}
+	}
+
+	return DOM_WALK_CMD_CONTINUE;
+}
 
 /**
  * callback for DOMNodeInserted end type
@@ -637,6 +666,14 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 			break;
 		}
 
+		/* Walk subtree of inserted element to inspect children */
+		exc = libdom_treewalk(DOM_WALK_ENABLE_ENTER,
+				subtree_walk_cb, (dom_node *) node, htmlc);
+		if (exc != DOM_NO_ERR) {
+			NSLOG(netsurf, DEBUG, "libdom_treewalk failed: %d",
+					exc);
+		}
+
 		if (htmlc->enable_scripting) {
 			/* ensure javascript context is available */
 			if (htmlc->jsthread == NULL) {
@@ -658,43 +695,6 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 		}
 	}
 	dom_node_unref(node);
-}
-
-
-/**
- * callback for DOMNodeInsertedIntoDocument end type
- */
-static void
-dom_default_action_DOMNodeInsertedIntoDocument_cb(struct dom_event *evt,
-						  void *pw)
-{
-	html_content *htmlc = pw;
-	dom_event_target *node;
-	dom_node_type type;
-	dom_exception exc;
-
-	exc = dom_event_get_target(evt, &node);
-	if ((exc == DOM_NO_ERR) && (node != NULL)) {
-		exc = dom_node_get_node_type(node, &type);
-		if ((exc == DOM_NO_ERR) && (type == DOM_ELEMENT_NODE)) {
-			/* an element node has been modified */
-			dom_html_element_type tag_type;
-
-			exc = dom_html_element_get_tag_type(node, &tag_type);
-			if (exc != DOM_NO_ERR) {
-				tag_type = DOM_HTML_ELEMENT_TYPE__UNKNOWN;
-			}
-
-			switch (tag_type) {
-			case DOM_HTML_ELEMENT_TYPE_SCRIPT:
-				dom_SCRIPT_showed_up(htmlc, (dom_html_script_element *) node);
-				fallthrough;
-			default:
-				break;
-			}
-		}
-		dom_node_unref(node);
-	}
 }
 
 
@@ -773,8 +773,6 @@ html_dom_event_fetcher(dom_string *type,
 	if (phase == DOM_DEFAULT_ACTION_END) {
 		if (dom_string_isequal(type, corestring_dom_DOMNodeInserted)) {
 			return dom_default_action_DOMNodeInserted_cb;
-		} else if (dom_string_isequal(type, corestring_dom_DOMNodeInsertedIntoDocument)) {
-			return dom_default_action_DOMNodeInsertedIntoDocument_cb;
 		} else if (dom_string_isequal(type, corestring_dom_DOMSubtreeModified)) {
 			return dom_default_action_DOMSubtreeModified_cb;
 		}
