@@ -1,0 +1,355 @@
+#!/usr/bin/env python3
+
+import argparse
+import base64
+import datetime
+import hashlib
+import os
+import re
+import sys
+
+import httpx
+
+
+class VersionNumeric(tuple):
+    def __new__(cls, vstr: str):
+        return super(VersionNumeric, cls).__new__(
+            cls, (int(val) for val in vstr.split("_"))
+        )
+
+
+class UpdateCABundle:
+    def __init__(self, args):
+        self._args = args
+        self._tag_pattern = re.compile(self._args.nss_rtm_tag_pattern)
+        self._srchash_pattern = re.compile(self._args.bundle_srchash_pattern)
+
+    def _current_version_and_srchash(self) -> tuple[VersionNumeric, str | None]:
+        if os.path.exists(self._args.output):
+            vsn, srchash = None, None
+            with open(self._args.output, "r", encoding="utf-8") as inf:
+                for line in inf:
+                    if vsn is not None and srchash is not None:
+                        break
+                    if vsn is None:
+                        mtch = self._tag_pattern.search(line)
+                        if mtch is not None:
+                            vsn = VersionNumeric(mtch[1])
+                            continue
+                    if srchash is None:
+                        mtch = self._srchash_pattern.search(line)
+                        if mtch is not None:
+                            srchash = mtch[1]
+                            continue
+                return vsn or VersionNumeric("0"), srchash
+
+        return VersionNumeric("0"), None
+
+    def _fetch_certdata(
+        self, current: VersionNumeric
+    ) -> tuple[str, str, datetime.datetime] | tuple[None, None, None]:
+        newest = current
+        tagname = None
+
+        with httpx.Client(http2=True, follow_redirects=True) as client:
+            headers = {
+                "Accept": "application/vnd.github+json",
+                "X-Github-Api-Version": "2026-03-10",
+            }
+            if "GH_TOKEN" in os.environ:
+                headers["Authorization"] = f'Bearer {os.environ["GH_TOKEN"]}'
+
+            response = client.get(
+                f"https://api.github.com/repos/{self._args.nss_repo}/tags",
+                headers=headers,
+                params={
+                    "per_page": 100,
+                    "page": 1,
+                },
+            )
+            response.raise_for_status()
+
+            while "next" in response.links:
+                for tag in response.json():
+                    mtch = self._tag_pattern.fullmatch(tag["name"])
+                    if not mtch:
+                        continue
+                    candidate = VersionNumeric(mtch[1])
+                    if candidate > newest:
+                        newest = candidate
+                        tagname = tag["name"]
+
+                response = client.get(
+                    response.links["next"]["url"], headers=headers
+                )
+                response.raise_for_status()
+
+            for tag in response.json():
+                mtch = self._tag_pattern.fullmatch(tag["name"])
+                if not mtch:
+                    continue
+                candidate = VersionNumeric(mtch[1])
+                if candidate > newest:
+                    newest = candidate
+                    tagname = tag["name"]
+
+            if newest == current:
+                return None, None, None
+
+            response = client.get(
+                f"https://raw.githubusercontent.com/{self._args.nss_repo}/"
+                f"refs/tags/{tagname}/{self._args.nss_certdata_path}"
+            )
+            response.raise_for_status()
+
+            return (
+                tagname, response.text, datetime.datetime.now(tz=datetime.UTC)
+            )
+
+    @staticmethod
+    def _parse_certdata(certdata: str) -> dict[str, dict[str, dict]|list[dict]]:
+        objects = {}
+        current_object = {}
+
+        mode = "NORMAL"
+        for line in certdata.splitlines():
+            line = line.strip()
+
+            # Skip comments and blank lines
+            if not line or line[0] == "#":
+                continue
+
+            if mode == "NORMAL":
+                parts = line.split(None, 2)
+                nparts = len(parts)
+                if nparts == 3:
+                    attr, atype, value = parts
+                elif nparts == 2:
+                    attr, atype, value = parts[0], parts[1], None
+                else:
+                    continue
+
+                if attr == "CKA_CLASS":
+                    assert atype == "CK_OBJECT_CLASS"
+                    # Capture current object
+                    if current_object and len(current_object) > 1:
+                        otype = current_object["CKA_CLASS"]
+                        if otype == "CKO_CERTIFICATE":
+                            if otype not in objects:
+                                objects[otype] = {}
+                            objects[otype][
+                                hashlib.sha1(
+                                    current_object["CKA_VALUE"]
+                                ).digest()
+                            ] = current_object
+                        else:
+                            if otype not in objects:
+                                objects[otype] = []
+                            objects[otype].append(current_object)
+                    # Create a fresh one
+                    current_object = {attr: value}
+                    continue
+
+                if value is None:
+                    assert atype == "MULTILINE_OCTAL"
+                    current_object[attr] = []
+                    # Switch into multiline mode
+                    mode = (atype, attr)
+                else:
+                    match atype:
+                        case "CK_BBOOL":
+                            value = {"CK_TRUE": True, "CK_FALSE": False}[value]
+                        case "UTF8":
+                            value = value.strip('"')
+                        case "CK_CERTIFICATE_TYPE":
+                            assert value == "CKC_X_509"
+                        case "CK_TRUST":
+                            pass
+                        case _:
+                            raise RuntimeError(f"Unsupported type {atype}")
+                    current_object[attr] = value
+            else:
+                # Multiline mode
+                assert isinstance(mode, tuple) and mode[0] == "MULTILINE_OCTAL"
+                attr = mode[1]
+                if line == "END":
+                    current_object[attr] = b"".join(current_object[attr])
+                    mode = "NORMAL"
+                    continue
+                vals = line.split("\\")
+                assert not vals[0]
+                current_object[attr].append(
+                    bytes(int(val, 8) for val in vals[1:])
+                )
+
+        # Capture last object
+        if current_object and len(current_object) > 1:
+            otype = current_object["CKA_CLASS"]
+            if otype == "CKO_CERTIFICATE":
+                if otype not in objects:
+                    objects[otype] = {}
+                objects[otype][
+                    hashlib.sha1(current_object["CKA_VALUE"]).digest()
+                ] = current_object
+            else:
+                if otype not in objects:
+                    objects[otype] = []
+                objects[otype].append(current_object)
+
+        return objects
+
+    def _emit_preamble(
+        self,
+        outf,
+        tagname: str,
+        certdata: str,
+        mtime: datetime.datetime,
+        newhash: str,
+    ):
+        certdata_url = (
+            f"https://raw.githubusercontent.com/{self._args.nss_repo}/"
+            f"refs/tags/{tagname}/{self._args.nss_certdata_path}"
+        )
+
+        # Extract the licensing information from certdata.txt
+        certdata_license_raw = re.search(
+            r"subject to the terms.*mozilla\.org/MPL/[0-9.]+/\.",
+            certdata,
+            flags=re.DOTALL|re.IGNORECASE|re.MULTILINE,
+        )[0].replace("\n#", "").replace("http:", "https:")
+
+        # Now, jump through hoops to re-wrap it
+        clrlen = len(certdata_license_raw)
+        certdata_license = []
+        while clrlen:
+            end = 70
+
+            if clrlen < end+1:
+                certdata_license.append(certdata_license_raw)
+                break
+
+            # Find split point
+            while not certdata_license_raw[end].isspace():
+                end -= 1
+            # Wind back to last printable
+            while certdata_license_raw[end].isspace():
+                end -= 1
+            # And split after it
+            end += 1
+            certdata_license.append(certdata_license_raw[:end])
+
+            # Wind forward to next printable
+            while certdata_license_raw[end].isspace():
+                end += 1
+
+            # Strip off the part we just captured
+            certdata_license_raw = certdata_license_raw[end:]
+            clrlen -= end
+
+        certdata_license = "\n## ".join(certdata_license)
+
+        # Emit the preamble. Note that the "NSS Tag" and "SHA256" lines
+        # are parsed by this script to determine if anything has changed
+        # since the current bundle was built. Modify them at your peril.
+        outf.write(
+            f"""\
+##
+## CA Root Certificates bundle
+##
+## Certificate data from Mozilla as of: {mtime:%a %b %d %H:%M:%S %Y GMT}
+## NSS Tag: {tagname}
+## SHA256: {newhash}
+##
+## This file contains the X.509 certificates of public Certificate
+## Authorities that were automatically extracted from Mozilla/NSS'
+## root certificates file (certdata.txt).  This file can be found in
+## the NSS source tree in the following location:
+## {certdata_url}
+##
+## This file is a mechanical extraction of data from NSS and its contents
+## are {certdata_license}
+##
+
+"""
+        )
+
+    def run(self):
+        current, srchash = self._current_version_and_srchash()
+
+        print(
+            f'   INFO: NSS currently: {"_".join(str(x) for x in current)}'
+            f" (sha256:{srchash})",
+            file=sys.stderr,
+        )
+
+        tagname, certdata, mtime = self._fetch_certdata(current)
+        if tagname is None:
+            print("   INFO: up to date", file=sys.stderr)
+            return
+
+        print(f"   INFO: Considering certdata from {tagname}", file=sys.stderr)
+
+        newhash = hashlib.sha256(certdata.encode("utf-8")).hexdigest()
+        if newhash == srchash:
+            print("   INFO: unchanged", file=sys.stderr)
+            return
+
+        objects = self._parse_certdata(certdata)
+
+        with open(self._args.output, "w", encoding="utf-8") as outf:
+            self._emit_preamble(outf, tagname, certdata, mtime, newhash)
+        
+            # Iterate over trust descriptors, finding matching certificates,
+            # and emitting those we are willing to accept as trust roots.
+            for trustdesc in objects["CKO_NSS_TRUST"]:
+                cert = objects["CKO_CERTIFICATE"][
+                    trustdesc["CKA_CERT_SHA1_HASH"]
+                ]
+                if trustdesc["CKA_TRUST_SERVER_AUTH"] in (
+                    "CKT_NSS_TRUSTED_DELEGATOR"
+                ):
+                    outf.write("\n")
+                    outf.write(trustdesc["CKA_LABEL"])
+                    outf.write("\n")
+                    outf.write("="*len(trustdesc["CKA_LABEL"]))
+                    outf.write("\n")
+                    outf.write("-----BEGIN CERTIFICATE-----\n")
+                    outf.write(
+                        base64.encodebytes(cert["CKA_VALUE"]).decode("utf-8")
+                    )
+                    outf.write("-----END CERTIFICATE-----\n")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Update CA certificate bundle")
+    parser.add_argument(
+        "--bundle-srchash-pattern",
+        default=r"SHA256:\s+([a-z0-9]{64})",
+        help=(
+            "Regular expression matching source hash in bundle"
+            " (default: %(default)s"
+        ),
+    )
+    parser.add_argument(
+        "--nss-repo",
+        default="mozilla/nss",
+        help="Github repository to fetch NSS tags from (default: %(default)s",
+    )
+    parser.add_argument(
+        "--nss-rtm-tag-pattern",
+        default=r"NSS_(\d+_\d+(_\d+)?)_RTM",
+        help="Regular expression matching NSS rtm tags (default: %(default)s",
+    )
+    parser.add_argument(
+        "-nss-certdata-path",
+        default="lib/ckfw/builtins/certdata.txt",
+        help="Path to certdata within NSS repository (default: %(default)s",
+    )
+    parser.add_argument("output", help="Path to output file")
+    args = parser.parse_args()
+
+    UpdateCABundle(args).run()
+
+
+if __name__ == "__main__":
+    main()
