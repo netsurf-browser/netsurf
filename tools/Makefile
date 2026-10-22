@@ -9,7 +9,18 @@ CLEANS += clean-testament
 
 .PHONY: testament
 
+# TODO: Ideally, we would merge the SBOMs properly and have details
+# TODO: of our libraries. For now, we just concatenate any we find.
 testament $(OBJROOT)/testament.h:
+ifneq ($(GCCSDK_INSTALL_CROSSBIN)-$(GCCSDK_INSTALL_ENV),-)
+	$(Q)echo -n >$(OBJROOT)/sbom
+  ifneq ($(wildcard $(GCCSDK_INSTALL_CROSSBIN)/../*.sbom),)
+	$(Q)cat $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/../*.sbom) >>$(OBJROOT)/sbom
+  endif
+  ifneq ($(wildcard $(GCCSDK_INSTALL_ENV)/*.sbom),)
+	$(Q)cat $(wildcard $(GCCSDK_INSTALL_ENV)/*.sbom) >>$(OBJROOT)/sbom
+  endif
+endif
 	$(Q)$(PERL) tools/git-testament.pl $(CURDIR) $(OBJROOT)/testament.h
 
 

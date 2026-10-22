@@ -47,6 +47,7 @@ bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 {
 	nserror res;
 	static modification_t modifications[] = WT_MODIFICATIONS;
+	static const char *sbom[] = WT_SBOM;
 	int modidx; /* midification index */
 
 	/* content is going to return ok */
@@ -117,6 +118,21 @@ bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 				 modifications[modidx].leaf);
 		if (res != NSERROR_OK) {
 			goto fetch_about_testament_handler_aborted;
+		}
+	}
+
+	if (sbom[0] != NULL) {
+		res = fetch_about_ssenddataf(ctx,
+				"\nSoftware bill of materials:\n\n");
+		if (res != NSERROR_OK) {
+			goto fetch_about_testament_handler_aborted;
+		}
+		for (modidx = 0; sbom[modidx] != NULL; ++modidx) {
+			res = fetch_about_ssenddataf(ctx, "  %s\n",
+					sbom[modidx]);
+			if (res != NSERROR_OK) {
+				goto fetch_about_testament_handler_aborted;
+			}
 		}
 	}
 

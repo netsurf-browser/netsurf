@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
+use File::Basename;
 
 =head1
 
@@ -168,6 +169,19 @@ foreach my $filename (sort keys %gitstatus) {
    $doneone = 1;
 }
 $testament .= " \\\n}\n";
+
+$testament .= "#define WT_SBOM {\\\n";
+if ( -e dirname($targetfile) . "/sbom" ) {
+   open(my $SBOM, "<", dirname($targetfile) . "/sbom");
+   foreach my $line (readline($SBOM)) {
+      $line =~ s/\\/\\\\/g;
+      $line =~ s/"/\\"/g;
+      $line =~ s/\n//g;
+      $testament .= "\"$line\", \\\n";
+      $doneone = 1;
+   }
+}
+$testament .= "NULL, \\\n}\n";
 
 my $oldcsum = "";
 if ( -e $targetfile ) {
