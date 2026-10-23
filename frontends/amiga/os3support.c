@@ -41,6 +41,8 @@
 
 #include "utils/log.h"
 
+BOOL __check_abort_enabled = FALSE; /* Disable clib2's Ctrl-C handler */
+
 #define SUCCESS (TRUE)
 #define FAILURE (FALSE)
 #define NO      !
