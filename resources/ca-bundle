@@ -1,22 +1,20 @@
 ##
-## Bundle of CA Root Certificates
+## CA Root Certificates bundle
 ##
-## Certificate data from Mozilla as of: Tue Oct 20 22:20:59 2026 GMT
-##
-## Find updated versions here: https://curl.se/docs/caextract.html
-##
-## This is a bundle of X.509 certificates of public Certificate Authorities
-## (CA). These were automatically extracted from Mozilla's root certificates
-## file (certdata.txt).  This file can be found in the mozilla source tree:
-## https://raw.githubusercontent.com/mozilla/nss/refs/tags/NSS_3_131_1_RTM/lib/ckfw/builtins/certdata.txt
-##
-## It contains the certificates in PEM format and therefore
-## can be directly used with curl / libcurl / php_curl, or with
-## an Apache+mod_ssl webserver for SSL client authentication.
-## Configure this file as the SSLCACertificateFile.
-##
-## Conversion done with mk-ca-bundle.pl version 1.33.
+## Certificate data from Mozilla as of: Fri Oct 23 11:21:19 2026 GMT
+## NSS Tag: NSS_3_132_RTM
 ## SHA256: 3ec2b4d240dc12c747eaf450061db84af757c483bbda302f9e29ceb5d70be510
+##
+## This file contains the X.509 certificates of public Certificate
+## Authorities that were automatically extracted from Mozilla/NSS'
+## root certificates file (certdata.txt).  This file can be found in
+## the NSS source tree in the following location:
+## https://raw.githubusercontent.com/mozilla/nss/refs/tags/NSS_3_132_RTM/lib/ckfw/builtins/certdata.txt
+##
+## This file is a mechanical extraction of data from NSS and its contents
+## are subject to the terms of the Mozilla Public License, v. 2.0. If a copy
+## of the MPL was not distributed with this file, You can obtain one at
+## https://mozilla.org/MPL/2.0/.
 ##
 
 
