@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "utils/messages.h"
 #include "utils/dirent.h"
@@ -472,14 +473,20 @@ int uname(struct utsname *buf) {
 
 char *realpath(const char *path, char *resolved_path)
 {
-	char *ret;
-	if (resolved_path == NULL) {
-		ret=strdup(path);
-	} else {
-		ret = resolved_path;
-		strcpy(resolved_path, path);
+	if (path == NULL) {
+		errno = EINVAL;
+		return NULL;
 	}
-	return ret;
+
+	/* Without a system realpath(), we cannot safely copy into an unknown-sized
+	 * caller buffer. Provide only the allocating form.
+	 */
+	if (resolved_path != NULL) {
+		errno = ENAMETOOLONG;
+		return NULL;
+	}
+
+	return strdup(path);
 }
 
 #endif
