@@ -262,6 +262,10 @@ int alphasort(const struct dirent **d1, const struct dirent **d2);
 int scandir(const char *dir, struct dirent ***namelist,
   int (*filter)(const struct dirent *),
   int (*compar)(const struct dirent **, const struct dirent **));
-#endif
-#endif
+#else /* __amigaos4__ */
 
+/* Stick with the OS3 def here as Delete is quite generic */
+#define DeleteFile Delete
+
+#endif /* __amigaos4__ */
+#endif
