@@ -238,6 +238,7 @@ enum
 	GID_VSCROLL,
 	GID_VSCROLLLAYOUT,
 	GID_LOGLAYOUT,
+	GID_LOGLABEL,
 	GID_LOG,
 	GID_LAST
 };
@@ -2287,6 +2288,12 @@ static void ami_gui_console_log_add(struct gui_window *g)
 	attrs[1].ti_Tag = TAG_DONE;
 	attrs[1].ti_Data = 0;
 
+	#ifndef __amigaos4__
+		g->shared->objects[GID_LOGLABEL] = LabelObj,
+			LABEL_Text, "Log",
+		LabelEnd;
+	#endif
+
 	g->shared->objects[GID_LOG] = ListBrowserObj,
 			GA_ID, GID_LOG,
 	#ifdef __amigaos4__
@@ -2301,6 +2308,12 @@ static void ami_gui_console_log_add(struct gui_window *g)
 	IDoMethod(g->shared->objects[GID_LOGLAYOUT], LM_ADDCHILD,
 			g->shared->win, g->shared->objects[GID_LOG], NULL);
 #else
+#ifndef __amigaos4__
+	SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_LOGLAYOUT],
+		g->shared->win, NULL,
+		LAYOUT_AddChild, g->shared->objects[GID_LOGLABEL], TAG_MORE, &attrs);
+#endif
+
 	SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_LOGLAYOUT],
 		g->shared->win, NULL,
 		LAYOUT_AddChild, g->shared->objects[GID_LOG], TAG_MORE, &attrs);
@@ -2322,6 +2335,15 @@ static void ami_gui_console_log_remove(struct gui_window *g)
 	IDoMethod(g->shared->objects[GID_LOGLAYOUT], LM_REMOVECHILD,
 			g->shared->win, g->shared->objects[GID_LOG]);
 #else
+	#ifndef __amigaos4__
+		if(g->shared->objects[GID_LOGLABEL] != NULL) {
+			SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_LOGLAYOUT],
+				g->shared->win, NULL,
+				LAYOUT_RemoveChild, g->shared->objects[GID_LOGLABEL], TAG_DONE);
+			g->shared->objects[GID_LOGLABEL] = NULL;
+		}
+	#endif
+
 	SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_LOGLAYOUT],
 		g->shared->win, NULL,
 		LAYOUT_RemoveChild, g->shared->objects[GID_LOG], TAG_DONE);
