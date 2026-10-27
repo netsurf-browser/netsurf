@@ -477,7 +477,8 @@ char *realpath(const char *path, char *resolved_path)
 		ret=strdup(path);
 	} else {
 		ret = resolved_path;
-		strcpy(resolved_path, path);
+		strncpy(resolved_path, path, PATH_MAX-1);
+		resolved_path[PATH_MAX-1] = '\0';
 	}
 	return ret;
 }
