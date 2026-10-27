@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2026 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -53,6 +53,7 @@ struct ami_menu_data;
 struct gui_window;
 struct gui_window_2;
 struct IBox;
+struct history_entry;
 
 #define AMI_GUI_TOOLBAR_MAX 20
 
@@ -350,6 +351,12 @@ void ami_gui2_set_closed(struct gui_window_2 *gwin, bool closed);
  * Indicates the window needs redrawing
  */
 void ami_gui2_set_new_content(struct gui_window_2 *gwin, bool new_content);
+
+/**
+ *  Get a translated history entry title
+ *  Stores the translation to be freed later
+ */
+STRPTR ami_gui2_get_ctxmenu_history_title(struct gui_window_2 *gwin, int id, const struct history_entry *entry);
 
 #endif
 

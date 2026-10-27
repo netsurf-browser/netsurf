@@ -283,6 +283,7 @@ struct gui_window_2 {
 	struct Hook throbber_hook;
 	struct Hook browser_hook;
 	struct Hook *ctxmenu_hook;
+	char *history_ctxitems[20];
 	Object *restrict history_ctxmenu[2];
 	Object *clicktab_ctxmenu;
 	gui_drag_type drag_op;
@@ -628,6 +629,15 @@ void ami_gui2_set_ctxmenu_history(struct gui_window_2 *gwin, ULONG direction, Ob
 {
 	assert(gwin != NULL);
 	gwin->history_ctxmenu[direction] = ctx_hist;
+}
+
+/* Get a translated history entry title */
+STRPTR ami_gui2_get_ctxmenu_history_title(struct gui_window_2 *gwin, int id, const struct history_entry *entry)
+{
+	if(gwin->history_ctxitems[id] != NULL) ami_utf8_free(gwin->history_ctxitems[id]);
+	gwin->history_ctxitems[id] = ami_utf8_easy((char *)browser_window_history_entry_get_title(entry));
+	
+	return (STRPTR)gwin->history_ctxitems[id];
 }
 
 void ami_gui2_set_closed(struct gui_window_2 *gwin, bool closed)
@@ -5569,6 +5579,12 @@ static void gui_window_destroy(struct gui_window *g)
 	if(g->shared->clicktab_ctxmenu) DisposeObject((Object *)g->shared->clicktab_ctxmenu); */
 	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_BACK]);
 	DisposeObject((Object *)g->shared->history_ctxmenu[AMI_CTXMENU_HISTORY_FORWARD]);
+	
+	/* Free translated history labels */
+	for(int i = 0; i < 20; i++) {
+		if(g->shared->history_ctxitems[i] != NULL) ami_utf8_free(g->shared->history_ctxitems[i]);
+	}
+	
 	ami_ctxmenu_release_hook(g->shared->ctxmenu_hook);
 	ami_gui_menu_free(g->shared);
 

@@ -499,17 +499,18 @@ void ami_ctxmenu_init(void)
 static bool ami_ctxmenu_history(int direction, struct gui_window_2 *gwin, const struct history_entry *entry)
 {
 	Object *history_root;
-	int id = AMI_CTX_ID_HISTORY0 + ami_gui2_get_ctxmenu_history_tmp(gwin);
-	if(direction == AMI_CTXMENU_HISTORY_FORWARD) id += 10;
 
 	if(ami_gui2_get_ctxmenu_history_tmp(gwin) >= 10) return false;
+
+	int id = AMI_CTX_ID_HISTORY0 + ami_gui2_get_ctxmenu_history_tmp(gwin);
+	if(direction == AMI_CTXMENU_HISTORY_FORWARD) id += 10;
 
 	ctxmenu_item_hook[id].h_Entry = (HOOKFUNC)ami_ctxmenu_item_history;
 	ctxmenu_item_hook[id].h_Data = (APTR)entry;
 
 	history_root = (Object *)IDoMethod(ami_gui2_get_ctxmenu_history(gwin, direction), MM_FINDID, 0, AMI_CTX_ID_HISTORY);
 
-	STRPTR title_lc = ami_utf8_easy((char *)browser_window_history_entry_get_title(entry));
+	STRPTR title_lc = ami_gui2_get_ctxmenu_history_title(gwin, id, entry);
 
 	IDoMethod(history_root, OM_ADDMEMBER, MStrip,
 		MA_Type, T_ITEM,
@@ -518,8 +519,6 @@ static bool ami_ctxmenu_history(int direction, struct gui_window_2 *gwin, const 
 		MA_Image, NULL,
 		MA_UserData, &ctxmenu_item_hook[id],
 	MEnd);
-
-	if(title_lc) ami_utf8_free(title_lc);
 
 	ami_gui2_set_ctxmenu_history_tmp(gwin, ami_gui2_get_ctxmenu_history_tmp(gwin) + 1);
 
