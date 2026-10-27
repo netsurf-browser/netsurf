@@ -121,38 +121,21 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 	if(force32bit == false) depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
 	NSLOG(netsurf, INFO, "Screen depth = %d", depth);
 
-#ifdef __amigaos4__
+ 	bitmap_set_format(&(bitmap_fmt_t) {
+		.layout = BITMAP_LAYOUT_ARGB8888,
+		.pma = false,
+	});
+   	
+ 	NSLOG(netsurf, INFO, "Set bitmap format to 0xAARRGGBB (native endian)");
+
 	if(depth < 16) {
 		gg->palette_mapped = true;
 		if(force32bit == false) palette_mapped = true;
-		
-		bitmap_set_format(&(bitmap_fmt_t) {
-			.layout = BITMAP_LAYOUT_ARGB8888,
-			.pma = true,
-		});
-   	
-		NSLOG(netsurf, INFO, "Set bitmap format to 0xAARRGGBB (native endian) (PMA)");
-		
 	} else {
 		gg->palette_mapped = false;
-		
-		bitmap_set_format(&(bitmap_fmt_t) {
-			.layout = BITMAP_LAYOUT_ARGB8888,
-			.pma = false,
-		});
-   	
-		NSLOG(netsurf, INFO, "Set bitmap format to 0xAARRGGBB (native endian)");
-
 	}
-#else
- 	bitmap_set_format(&(bitmap_fmt_t) {
-		.layout = BITMAP_LAYOUT_ARGB8888,
-		.pma = true,
-	});
-   	
- 	NSLOG(netsurf, INFO, "Set bitmap format to 0xAARRGGBB (native endian) (PMA)");
 
-
+#ifndef __amigaos4__
 	/* Friend BitMaps are weird.
 	 * For OS4, we shouldn't use a friend BitMap here (see below).
 	 * For OS3 AGA, we get no display blitted if we use a friend BitMap,
@@ -164,13 +147,6 @@ struct gui_globals *ami_plot_ra_alloc(ULONG width, ULONG height, bool force32bit
 		/* Force friend BitMaps on for obvious RTG screens under OS3.
 		 * If we get a bit smarter about this we can lose the user option. */
 		if((depth > 8) && (force32bit == false)) friend = scrn->RastPort.BitMap;
-	}
-
-	if(depth < 16) {
-		gg->palette_mapped = true;
-		if(force32bit == false) palette_mapped = true;
-	} else {
-		gg->palette_mapped = false;
 	}
 #endif
 
