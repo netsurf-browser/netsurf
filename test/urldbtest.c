@@ -922,6 +922,48 @@ START_TEST(urldb_cert_permissions_test)
 }
 END_TEST
 
+START_TEST(urldb_hsts_policy_test)
+{
+	const char *root_domain_url = "https://domain.test/";
+	const char *subdomain_url = "https://sub.domain.test/";
+	nsurl *root, *sub;
+	bool enabled;
+
+	root = make_url(root_domain_url);
+	sub = make_url(subdomain_url);
+
+	/* Invalid policy (max-age is required) */
+	urldb_set_hsts_policy(root, "includeSubDomains");
+	enabled = urldb_get_hsts_enabled(root);
+	ck_assert(enabled == false);
+
+	/* Valid policy, but tainted transport */
+	urldb_set_cert_permissions(root, true); /* permit invalid certs for url */
+	urldb_set_hsts_policy(root, "max-age=1");
+	enabled = urldb_get_hsts_enabled(root);
+	ck_assert(enabled == false);
+	/* Clear cert permissions taint */
+	urldb_set_cert_permissions(root, false);
+
+	/* Valid policy but no subdomains */
+	urldb_set_hsts_policy(root, "max-age=1");
+	enabled = urldb_get_hsts_enabled(root);
+	ck_assert(enabled == true);
+	enabled = urldb_get_hsts_enabled(sub);
+	ck_assert(enabled == false);
+
+	/* Valid policy, including subdomains */
+	urldb_set_hsts_policy(root, "max-age=1; includeSubDomains");
+	enabled = urldb_get_hsts_enabled(root);
+	ck_assert(enabled == true);
+	enabled = urldb_get_hsts_enabled(sub);
+	ck_assert(enabled == true);
+
+	nsurl_unref(sub);
+	nsurl_unref(root);
+}
+END_TEST
+
 START_TEST(urldb_update_visit_test)
 {
 	nsurl *url;
@@ -995,6 +1037,7 @@ static TCase *urldb_case_create(void)
 	tcase_add_test(tc, urldb_iterate_partial_numeric_v6_test);
 	tcase_add_test(tc, urldb_auth_details_test);
 	tcase_add_test(tc, urldb_cert_permissions_test);
+	tcase_add_test(tc, urldb_hsts_policy_test);
 	tcase_add_test(tc, urldb_update_visit_test);
 	tcase_add_test(tc, urldb_reset_visit_test);
 	tcase_add_test(tc, urldb_persistence_test);
