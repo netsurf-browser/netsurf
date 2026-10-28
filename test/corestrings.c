@@ -55,7 +55,10 @@ START_TEST(corestrings_test)
 	malloc_limit(UINT_MAX);
 	
 	if (_i < CORESTRING_TEST_COUNT) {
+		/* This test is invalid when running a sanitized build */
+#ifndef __SANITIZE_ADDRESS__
 		ck_assert_int_eq(ires, NSERROR_NOMEM);
+#endif
 	} else {
 		ck_assert_int_eq(ires, NSERROR_OK);
 	}
