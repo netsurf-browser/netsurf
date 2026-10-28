@@ -514,7 +514,10 @@ START_TEST(chain_add_all_remove_all_alloc)
 	ck_assert_int_eq(values, 0);
 	
 	if (_i < CHAIN_TEST_MALLOC_COUNT_MAX) {
+		/* This test is invalid when running a sanitized build */
+#ifndef __SANITIZE_ADDRESS__
 		ck_assert(failed);
+#endif
 	} else {
 		ck_assert(!failed);
 	}
