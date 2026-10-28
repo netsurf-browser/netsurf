@@ -36,9 +36,16 @@
 #undef CORESTRING_DOM_VALUE
 #undef CORESTRING_NSURL
 
+static int corestrings_initialised;
+
 /* exported interface documented in utils/corestrings.h */
 nserror corestrings_fini(void)
 {
+	if (corestrings_initialised == 0) {
+		return NSERROR_OK;
+	}
+	corestrings_initialised = 0;
+
 #define CORESTRING_LWC_VALUE(NAME,VALUE)				\
 	do {								\
 		lwc_string_unref(corestring_lwc_##NAME);		\
@@ -78,6 +85,11 @@ nserror corestrings_init(void)
 	lwc_error lerror;
 	nserror error;
 	dom_exception exc;
+
+	if (corestrings_initialised == 1) {
+		return NSERROR_OK;
+	}
+	corestrings_initialised = 1;
 
 #define CORESTRING_LWC_VALUE(NAME,VALUE)				\
 	do {								\
