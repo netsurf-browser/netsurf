@@ -269,12 +269,14 @@ nserror ami_pageinfo_open(struct browser_window *bw, ULONG left, ULONG top)
 	}
 
 	if(page_info_get_size(ncwin->pi, &width, &height) == NSERROR_OK) {
-		/* Set window to the correct size.
-		 * TODO: this should really set the size of ncwin->core.objects[GID_CW_DRAW]
-		 * and let the window adjust, here we've hardcoded to add 6x4px as that's
-		 * what window.class does before v45.
-		 */
-		SetAttrs(ncwin->core.objects[GID_CW_WIN], WA_InnerWidth, width + 6, WA_InnerHeight, height + 4, TAG_DONE);
+		/* Set draw area size and let the window/layout adjust (OS3-safe) */
+		SetAttrs(ncwin->core.objects[GID_CW_DRAW],
+			GA_Width, width,
+			GA_Height, height,
+			TAG_DONE);
+
+		RethinkLayout((struct Gadget *)ncwin->core.objects[GID_CW_WIN],
+			NULL, NULL, TRUE);
 	}
 
 	return NSERROR_OK;
