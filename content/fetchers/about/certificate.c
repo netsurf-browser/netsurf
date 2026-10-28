@@ -338,10 +338,10 @@ xname_to_info(X509_NAME *xname, struct ns_cert_name *iname)
 {
 	int entryidx;
 	int entrycnt;
-	X509_NAME_ENTRY *entry; /* current name entry */
-	ASN1_STRING *value;
+	const X509_NAME_ENTRY *entry; /* current name entry */
+	const ASN1_STRING *value;
 	const unsigned char *value_str;
-	ASN1_OBJECT *name;
+	const ASN1_OBJECT *name;
 	int name_nid;
 	char **field;
 
