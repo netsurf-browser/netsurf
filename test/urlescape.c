@@ -199,6 +199,8 @@ START_TEST(url_unescape_simple_test)
 
 	/* ensure contents */
 	ck_assert_str_eq(unesc_str, tst->res);
+
+	free(unesc_str);
 }
 END_TEST
 
