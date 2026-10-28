@@ -334,7 +334,7 @@ static int ns_EVP_PKEY_get_octet_string_param(const EVP_PKEY *pkey,
  * \return NSERROR_OK on success else error code
  */
 static nserror
-xname_to_info(X509_NAME *xname, struct ns_cert_name *iname)
+xname_to_info(const X509_NAME *xname, struct ns_cert_name *iname)
 {
 	int entryidx;
 	int entrycnt;
