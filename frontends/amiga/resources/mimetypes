@@ -32,7 +32,6 @@ image/x-bmp                DT=BMP      TYPE=bmp
 image/x-ms-bmp             DT=BMP      TYPE=bmp
 image/x-win-bitmap         DT=BMP      TYPE=bmp
 image/x-windows-bmp        DT=BMP      TYPE=bmp
-image/x-xbitmap            DT=BMP      TYPE=bmp
 application/bmp            DT=BMP      TYPE=bmp
 application/preview        DT=BMP      TYPE=bmp
 application/x-bmp          DT=BMP      TYPE=bmp
