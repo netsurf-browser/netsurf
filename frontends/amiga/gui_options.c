@@ -163,6 +163,7 @@ enum
 	GID_OPTS_SAVE,
 	GID_OPTS_USE,
 	GID_OPTS_CANCEL,
+	GID_OPTS_HELP,
 	GID_OPTS_LAST
 };
 
@@ -495,6 +496,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	gadlab[GID_OPTS_SAVE] = (char *)ami_utf8_easy((char *)messages_get("SelSave"));
 	gadlab[GID_OPTS_USE] = (char *)ami_utf8_easy((char *)messages_get("Use"));
 	gadlab[GID_OPTS_CANCEL] = (char *)ami_utf8_easy((char *)messages_get("Cancel"));
+	gadlab[GID_OPTS_HELP] = (char *)ami_utf8_easy((char *)messages_get("Help"));
 
 	gadlab[LAB_OPTS_WINTITLE] = (char *)ami_utf8_easy((char *)messages_get("Preferences"));
 	gadlab[LAB_OPTS_RESTART] = (char *)ami_utf8_easy((char *)messages_get("NeedRestart"));
@@ -1756,6 +1758,11 @@ void ami_gui_opts_open(void)
 						GA_Text,gadlab[GID_OPTS_CANCEL],
 						GA_RelVerify,TRUE,
 					ButtonEnd,
+					LAYOUT_AddChild, gow->objects[GID_OPTS_HELP] = ButtonObj,
+						GA_ID, GID_OPTS_HELP,
+						GA_Text, gadlab[GID_OPTS_HELP],
+						GA_RelVerify, TRUE,
+					ButtonEnd,
 				EndGroup, // save/use/cancel
 			EndGroup, // main
 		EndWindow;
@@ -2198,18 +2205,17 @@ static BOOL ami_gui_opts_event(void *w)
 			break;
 
 			case WMHI_GADGETHELP:
-#if 0
-				/* FIXME: this is firing on OS3.2 and OS4 without HELP being pressed */
+				/* NOTE: WMHI_GADGETHELP fires spuriously on OS3.2/OS4. Use the Help button instead.
+				 * The original handling is kept below for reference. */
+				/*
 				if((result & WMHI_GADGETMASK) == 0) {
-					/* Pointer not over our window */
 					ami_help_open(AMI_HELP_MAIN, ami_gui_get_screen());
 				} else {
-					/* TODO: Make this sensitive to the tab the user is currently on */
 					ami_help_open(AMI_HELP_PREFS, ami_gui_get_screen());
 				}
-#endif
+				*/
 			break;
-			
+
 			case WMHI_GADGETUP:
 				switch(result & WMHI_GADGETMASK)
 				{
@@ -2226,6 +2232,11 @@ static BOOL ami_gui_opts_event(void *w)
 					case GID_OPTS_CANCEL:
 						ami_gui_opts_close(gow);
 						return TRUE;
+					break;
+
+					case GID_OPTS_HELP:
+						/* TODO: Make this sensitive to the tab the user is currently on */
+						ami_help_open(AMI_HELP_PREFS, ami_gui_get_screen());
 					break;
 
 					case GID_OPTS_HOMEPAGE_DEFAULT:
