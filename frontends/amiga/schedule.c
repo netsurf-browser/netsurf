@@ -280,7 +280,7 @@ static void ami_schedule_open_timer(struct MsgPort *msgport)
 	tioreq = (struct nscallback *)CreateIORequest(msgport, sizeof(struct nscallback));
 #endif
 
-	OpenDevice("timer.device", UNIT_VBLANK, (struct IORequest *)tioreq, 0);
+	OpenDevice("timer.device", UNIT_MICROHZ, (struct IORequest *)tioreq, 0);
 
 	TimerBase = (struct Device *)tioreq->timereq.Request.io_Device;
 #ifdef __amigaos4__

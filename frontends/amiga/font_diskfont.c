@@ -47,7 +47,7 @@
 static struct RastPort temp_rp;
 static UBYTE style_set = 0;
 
-static struct ami_font_dfcache_node *ami_font_bm_open(struct RastPort *rp, const plot_font_style_t *fstyle)
+static struct ami_cache_node *ami_font_bm_open(struct RastPort *rp, const plot_font_style_t *fstyle)
 {
 	struct TextAttr tattr;
 	char *fontname;
@@ -103,9 +103,9 @@ static struct ami_font_dfcache_node *ami_font_bm_open(struct RastPort *rp, const
 	if(tattr.ta_YSize == 0) return NULL;
 	NSLOG(netsurf, INFO, "font: %s/%d", tattr.ta_Name, tattr.ta_YSize);
 
-	struct ami_font_dfcache_node *nodedata = ami_font_dfcache_locate(tattr.ta_Name, tattr.ta_YSize);
+	struct ami_cache_node *nodedata = ami_font_dfcache_locate(tattr.ta_Name, tattr.ta_YSize);
 	if(nodedata) {
-		SetRPAttrs(rp, RPTAG_Font, nodedata->font, TAG_DONE);
+		SetRPAttrs(rp, RPTAG_Font, (struct TextFont *)nodedata->userdata, TAG_DONE);
 		NSLOG(netsurf, INFO, "Applying SoftStyle to current font");
 		style_set = AskSoftStyle(rp);
 		SetSoftStyle(rp, requested_style, style_set);
@@ -119,14 +119,14 @@ static struct ami_font_dfcache_node *ami_font_bm_open(struct RastPort *rp, const
 		return NULL;
 	}
 
-	if((nodedata->font = OpenDiskFont(&tattr))) {
-		SetRPAttrs(rp, RPTAG_Font, nodedata->font, TAG_DONE);
+	if((nodedata->userdata = (void *)OpenDiskFont(&tattr))) {
+		SetRPAttrs(rp, RPTAG_Font, (struct TextFont *)nodedata->userdata, TAG_DONE);
 		style_set = AskSoftStyle(rp);
 		SetSoftStyle(rp, requested_style, style_set);
 	} else {
 		/* Fall back to system-wide default font */
 		SetRPAttrs(rp, RPTAG_Font, GfxBase->DefaultFont, TAG_DONE);
-		nodedata->font = GfxBase->DefaultFont;
+		nodedata->userdata = (void *)GfxBase->DefaultFont;
 	}
 	
 	ami_font_dfcache_insert(nodedata, tattr.ta_Name, tattr.ta_YSize);
@@ -136,8 +136,8 @@ static struct ami_font_dfcache_node *ami_font_bm_open(struct RastPort *rp, const
 
 void ami_font_diskfont_close(void *nso)
 {
-	struct ami_font_dfcache_node *node = (struct ami_font_dfcache_node *)nso;
-	if(node->font != GfxBase->DefaultFont) CloseFont(node->font);
+	struct ami_cache_node *node = (struct ami_cache_node *)nso;
+	if(node->userdata != GfxBase->DefaultFont) CloseFont((struct TextFont *)node->userdata);
 }
 
 static size_t ami_font_bm_convert_local_to_utf8_offset(const char *utf8string, size_t length, ULONG offset)
