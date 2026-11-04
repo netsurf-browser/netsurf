@@ -137,6 +137,13 @@ static const uint16 sc_table[] = {
 #endif
 		0, 0};
 
+struct font_cache_userdata {
+	struct OutlineFont *font;
+	char *bold;
+	char *italic;
+	char *bolditalic;
+};
+
 static lwc_string *glypharray[0xffff + 1];
 
 static struct List ami_diskfontlib_list;
@@ -378,14 +385,14 @@ static nserror amiga_nsfont_split(const plot_font_style_t *fstyle,
 /**
  * Search for a font in the list and load from disk if not present
  */
-static struct ami_font_cache_node *ami_font_open(const char *font, bool critical)
+static struct ami_cache_node *ami_font_open(const char *font, bool critical)
 {
 	if(font == NULL) {
 		NSLOG(netsurf, INFO, "Requested NULL font");
 		return NULL;
 	}
 
-	struct ami_font_cache_node *nodedata = ami_font_cache_locate(font);
+	struct ami_cache_node *nodedata = ami_font_cache_locate(font);
 	if(nodedata) return nodedata;
 
 	nodedata = ami_font_cache_alloc_entry(font);
@@ -395,40 +402,45 @@ static struct ami_font_cache_node *ami_font_open(const char *font, bool critical
 		return NULL;
 	}
 
-	nodedata->font = OpenOutlineFont(font, &ami_diskfontlib_list, OFF_OPEN);
+	struct font_cache_userdata *userdata = malloc(sizeof(struct font_cache_userdata));
+
+	userdata->font = OpenOutlineFont(font, &ami_diskfontlib_list, OFF_OPEN);
 	
-	if(!nodedata->font)
+	if(!userdata->font)
 	{
 		NSLOG(netsurf, INFO, "Requested font not found: %s", font);
 		if(critical == true) amiga_warn_user("CompError", font);
+		free(userdata);
 		free(nodedata);
 		return NULL;
 	}
 
-	nodedata->bold = (char *)GetTagData(OT_BName, 0, nodedata->font->olf_OTagList);
-	if(nodedata->bold)
+	userdata->bold = (char *)GetTagData(OT_BName, 0, userdata->font->olf_OTagList);
+	if(userdata->bold)
 		NSLOG(netsurf, INFO, "Bold font defined for %s is %s", font,
-		      nodedata->bold);
+		      userdata->bold);
 	else
 		NSLOG(netsurf, INFO,
 		      "Warning: No designed bold font defined for %s", font);
 
-	nodedata->italic = (char *)GetTagData(OT_IName, 0, nodedata->font->olf_OTagList);
-	if(nodedata->italic)
+	userdata->italic = (char *)GetTagData(OT_IName, 0, userdata->font->olf_OTagList);
+	if(userdata->italic)
 		NSLOG(netsurf, INFO, "Italic font defined for %s is %s",
-		      font, nodedata->italic);
+		      font, userdata->italic);
 	else
 		NSLOG(netsurf, INFO,
 		      "Warning: No designed italic font defined for %s", font);
 
-	nodedata->bolditalic = (char *)GetTagData(OT_BIName, 0, nodedata->font->olf_OTagList);
-	if(nodedata->bolditalic)
+	userdata->bolditalic = (char *)GetTagData(OT_BIName, 0, userdata->font->olf_OTagList);
+	if(userdata->bolditalic)
 		NSLOG(netsurf, INFO, "Bold-italic font defined for %s is %s",
-		      font, nodedata->bolditalic);
+		      font, userdata->bolditalic);
 	else
 		NSLOG(netsurf, INFO,
 		      "Warning: No designed bold-italic font defined for %s",
 		      font);
+
+	nodedata->userdata = (void *)userdata;
 
 	ami_font_cache_insert(nodedata, font);
 	return nodedata;
@@ -444,8 +456,8 @@ static struct ami_font_cache_node *ami_font_open(const char *font, bool critical
 static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 		const uint16 *codepoint)
 {
-	struct ami_font_cache_node *node;
-	struct ami_font_cache_node *designed_node = NULL;
+	struct ami_cache_node *node;
+	struct ami_cache_node *designed_node = NULL;
 	struct OutlineFont *ofont;
 	char *fontname;
 	ULONG ysize;
@@ -500,10 +512,12 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 	if (fstyle->weight >= 700)
 		tstyle += NSA_BOLD;
 
+	struct font_cache_userdata *userdata = (struct font_cache_userdata *)node->userdata;
+
 	switch(tstyle)
 	{
 		case NSA_ITALIC:
-			if(node->italic) designed_node = ami_font_open(node->italic, false);
+			if(userdata->italic) designed_node = ami_font_open(userdata->italic, false);
 
 			if(designed_node == NULL) {
 				shearsin = NSA_VALUE_SHEARSIN;
@@ -517,7 +531,7 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 		break;
 
 		case NSA_BOLD:
-			if(node->bold) designed_node = ami_font_open(node->bold, false);
+			if(userdata->bold) designed_node = ami_font_open(userdata->bold, false);
 
 			if(designed_node == NULL) {
 				emboldenx = NSA_VALUE_BOLDX;
@@ -529,7 +543,7 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 			shearsin = NSA_VALUE_SHEARSIN;
 			shearcos = NSA_VALUE_SHEARCOS;
 
-			if(node->bold) designed_node = ami_font_open(node->bold, false);
+			if(userdata->bold) designed_node = ami_font_open(userdata->bold, false);
 
 			if(designed_node == NULL) {
 				emboldenx = NSA_VALUE_BOLDX;
@@ -538,7 +552,7 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 		break;
 
 		case NSA_BOLDITALIC:
-			if(node->bolditalic) designed_node = ami_font_open(node->bolditalic, false);
+			if(userdata->bolditalic) designed_node = ami_font_open(userdata->bolditalic, false);
 
 			if(designed_node == NULL) {
 				emboldenx = NSA_VALUE_BOLDX;
@@ -553,9 +567,10 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 	ysize = fstyle->size * ((1 << 16) / PLOT_STYLE_SCALE);
 
 	if(designed_node == NULL) {
-		ofont = node->font;
+		ofont = userdata->font;
 	} else {
-		ofont = designed_node->font;
+		struct font_cache_userdata *designed_userdata = (struct font_cache_userdata *)designed_node->userdata;
+		ofont = designed_userdata->font;
 	}
 
 #ifndef __amigaos4__
@@ -913,10 +928,15 @@ static inline ULONG ami_font_unicode_width(const char *string, ULONG length,
 	return x;
 }
 
-void ami_font_bullet_close(void *nso)
+BOOL ami_font_bullet_close(void *nso)
 {
-	struct ami_font_cache_node *node = (struct ami_font_cache_node *)nso;
-	CloseOutlineFont(node->font, &ami_diskfontlib_list);
+	struct ami_cache_node *node = (struct ami_cache_node *)nso;
+	struct font_cache_userdata *userdata = (struct font_cache_userdata *)node->userdata;
+	CloseOutlineFont(userdata->font, &ami_diskfontlib_list);
+	free(userdata);
+	node->userdata = NULL;
+	
+	return TRUE;
 }
 
 const struct ami_font_functions ami_font_bullet_table = {

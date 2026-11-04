@@ -18,11 +18,11 @@
 
 #ifndef AMIGA_FONT_BULLET_H
 #define AMIGA_FONT_BULLET_H
-struct ami_font_cache_node;
+#include <stdbool.h>
 
 void ami_font_bullet_init(void);
 void ami_font_bullet_fini(void);
-void ami_font_bullet_close(void *nso);
+BOOL ami_font_bullet_close(void *nso);
 
 /* Alternate entry points into font_scan */
 void ami_font_initscanner(bool force, bool save);
