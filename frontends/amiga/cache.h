@@ -33,6 +33,7 @@ struct ami_cache_lst
 	struct MinList *list;
 #endif
 
+	BOOL cleanup;
 	BOOL (*callback)(void *node);
 };
 
@@ -55,9 +56,15 @@ struct ami_cache_node *ami_cache_alloc_entry(struct ami_cache_lst *cache_list, c
 /* insert a cache entry into the list (OS3) */
 void ami_cache_insert(struct ami_cache_lst *cache_list, void *nodedata, const char *str);
 
+/* remove a cache entry
+ * NB: this does not call the callback, do your own maintenance!
+ */
+void ami_cache_remove_node(struct ami_cache_lst *cache_list, struct ami_cache_node *node);
+
 /* initialise the cache */
 /* callback is called on node deletion - if FALSE node will not be deleted */
-struct ami_cache_lst *ami_cache_init(BOOL (*callback)(void *node));
+/* cleanup specifies if a scheduled cleanup of old entries should be performed */
+struct ami_cache_lst *ami_cache_init(BOOL (*callback)(void *node), BOOL cleanup);
 
 /* cache clean-up */
 void ami_cache_fini(struct ami_cache_lst *cache_list);

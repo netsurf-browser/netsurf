@@ -5,7 +5,7 @@
 CFLAGS += -std=c99 -Dnsamiga
 
 ifneq ($(SUBTARGET),os3)
-  CFLAGS += -flto -mstrict-align -finline-functions -U__STRICT_ANSI__ -D__USE_INLINE__ -D__USE_BASETYPE__
+  CFLAGS += -gstabs -mstrict-align -finline-functions -U__STRICT_ANSI__ -D__USE_INLINE__ -D__USE_BASETYPE__
 else
   CFLAGS += -DPATH_MAX=1024 -D__m68k__ -fomit-frame-pointer -m68020-60 -msoft-float
   LDFLAGS += -m68020-60

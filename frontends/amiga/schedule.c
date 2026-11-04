@@ -25,11 +25,11 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include <pbl.h>
 
 #include "utils/errors.h"
 #include "utils/log.h"
 
+#include "amiga/cache.h"
 #include "amiga/memory.h"
 #include "amiga/schedule.h"
 
@@ -49,7 +49,7 @@ struct TimerIFace *ITimer;
 static struct MsgPort *schedule_msgport = NULL;
 #endif
 
-static PblHeap *schedule_list;
+static struct ami_cache_lst *schedule_list;
 
 /**
  * Remove timer event
@@ -109,28 +109,21 @@ static nserror ami_schedule_add_timer_event(struct nscallback *nscb, int t)
 static struct nscallback *
 ami_schedule_locate(void (*callback)(void *p), void *p, bool remove)
 {
-	PblIterator *iterator;
-	struct nscallback *nscb;
-	bool found_cb = false;
+	struct nscallback *nscb = NULL;
 
+	char str[20];
+	snprintf(str, 20, "%p:%p", callback, p);
+	
 	/* check there is something on the list */
 	if (schedule_list == NULL) return NULL;
-	if(pblHeapIsEmpty(schedule_list)) return NULL;
 
-	iterator = pblHeapIterator(schedule_list);
+	struct ami_cache_node *found_node = ami_cache_locate(schedule_list, (char *)&str);
 
-	while ((nscb = pblIteratorNext(iterator)) != (void *)-1) {
-		if ((nscb->callback == callback) && (nscb->p == p)) {
-			if (remove == true) pblIteratorRemove(iterator);
-			found_cb = true;
-			break;
-		}
-	};
+	if (found_node) return nscb = found_node->userdata;
 
-	pblIteratorFree(iterator);
+	if (remove == true) ami_cache_remove_node(schedule_list, found_node);
 
-	if (found_cb == true) return nscb;
-		else return NULL;
+	return nscb;
 }
 
 /**
@@ -148,7 +141,6 @@ static nserror ami_schedule_reschedule(struct nscallback *nscb, int t)
 	if (ami_schedule_add_timer_event(nscb, t) != NSERROR_OK)
 		return NSERROR_NOMEM;
 
-	pblHeapConstruct(schedule_list);
 	return NSERROR_OK;
 }
 
@@ -175,52 +167,33 @@ static nserror schedule_remove(void (*callback)(void *p), void *p, bool abort)
 #else
 		FreeVec(nscb);
 #endif
-		pblHeapConstruct(schedule_list);
 	}
 
 	return NSERROR_OK;
 }
 
-static void schedule_remove_all(void)
+static BOOL ami_schedule_delete_callback(void *node)
 {
-	PblIterator *iterator;
-	struct nscallback *nscb;
-
-	if(pblHeapIsEmpty(schedule_list)) return;
-
-	iterator = pblHeapIterator(schedule_list);
-
-	while ((nscb = pblIteratorNext(iterator)) != (void *)-1) {
-		ami_schedule_remove_timer_event(nscb);
-		pblIteratorRemove(iterator);
+	struct ami_cache_node *cache_node = (struct ami_cache_node *)node;
+	struct nscallback *nscb = (struct nscallback *)cache_node->userdata;
+	
+	ami_schedule_remove_timer_event(nscb);
 #ifdef __amigaos4__
-		FreeSysObject(ASOT_IOREQUEST, nscb);
+	FreeSysObject(ASOT_IOREQUEST, nscb);
 #else
-		FreeVec(nscb);
+	FreeVec(nscb);
 #endif
-	};
 
-	pblIteratorFree(iterator);
-}
-
-static int ami_schedule_compare(const void *prev, const void *next)
-{
-	struct nscallback *nscb1 = *(struct nscallback **)prev;
-	struct nscallback *nscb2 = *(struct nscallback **)next;
-
-	/**\todo a heap probably isn't the best idea now */
-	return CmpTime(&nscb1->tv, &nscb2->tv);
+return TRUE;
 }
 
 /* Outputs all scheduled events to the log */
 static void ami_schedule_dump(void)
 {
-	PblIterator *iterator;
+#ifdef __amigaos4__
 	struct nscallback *nscb;
 	struct ClockData clockdata;
 	
-	if(pblHeapIsEmpty(schedule_list)) return;
-
 	struct TimeVal tv;
 	GetSysTime(&tv);
 	Amiga2Date(tv.Seconds, &clockdata);
@@ -230,9 +203,15 @@ static void ami_schedule_dump(void)
 	      clockdata.hour, clockdata.min, clockdata.sec, tv.Microseconds);
 	NSLOG(netsurf, INFO, "Events remaining in queue:");
 
-	iterator = pblHeapIterator(schedule_list);
+	struct ami_cache_node *node;
+	struct ami_cache_node *nnode;
 
-	while ((nscb = pblIteratorNext(iterator)) != (void *)-1) {
+	node = (struct ami_cache_node *)GetFirstSkipNode(schedule_list->list);
+	if(node == NULL) return;
+
+	do {
+		nnode = (struct ami_cache_node *)GetNextSkipNode(schedule_list->list, (struct SkipNode *)node);
+		nscb = (struct nscallback *)node->userdata;
 		Amiga2Date(nscb->tv.Seconds, &clockdata);
 		NSLOG(netsurf, INFO,
 		      "nscb: %p, at %d-%d-%d %d:%d:%d.%lu, callback: %p, %p",
@@ -244,9 +223,9 @@ static void ami_schedule_dump(void)
 		} else {
 			NSLOG(netsurf, INFO, "-> COMPLETE");
 		}
-	};
 
-	pblIteratorFree(iterator);
+	} while((node = nnode));
+#endif
 }
 
 /**
@@ -304,13 +283,11 @@ nserror ami_schedule_create(struct MsgPort *msgport)
 #ifndef __amigaos4__
 	schedule_msgport = msgport;
 #endif
-	schedule_list = pblHeapNew();
+	schedule_list = ami_cache_init(ami_schedule_delete_callback, FALSE);
 
 	if (schedule_list == NULL) {
 		return NSERROR_NOMEM;
 	}
-
-	pblHeapSetCompareFunction(schedule_list, ami_schedule_compare);
 
 	return NSERROR_OK;
 }
@@ -319,8 +296,7 @@ nserror ami_schedule_create(struct MsgPort *msgport)
 void ami_schedule_free(void)
 {
 	ami_schedule_dump();
-	schedule_remove_all();
-	pblHeapFree(schedule_list); // this should be empty at this point
+	ami_cache_fini(schedule_list);
 	schedule_list = NULL;
 
 	ami_schedule_close_timer();
@@ -357,9 +333,16 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 
 	nscb->callback = callback;
 	nscb->p = p;
+	
+	char str[20];
+	snprintf(str, 20, "%p:%p", callback, p);
 
-	pblHeapInsert(schedule_list, nscb);
-
+	struct ami_cache_node *node = ami_cache_alloc_entry(schedule_list, (char *)&str);
+	if(node) {	
+		node->userdata = nscb;
+		ami_cache_insert(schedule_list, node, (char *)&str);
+	}
+	
 	return NSERROR_OK;
 
 }

@@ -81,7 +81,7 @@ static void ami_cache_cleanup(struct ami_cache_lst *cache_list)
 		{
 			if(cache_list->callback(node)) {
 				NSLOG(netsurf, INFO,
-			      "Freeing font %p not used for %ld seconds",
+			      "Freeing %p not used for %ld seconds",
 			      node->skip_node.sn_Key,
 			      curtime.Seconds);
 				RemoveSkipNode(cache_list->list, node->skip_node.sn_Key);
@@ -145,6 +145,14 @@ static void ami_cache_del_skiplist(struct ami_cache_lst *cache_list)
 }
 #endif
 
+void ami_cache_remove_node(struct ami_cache_lst *cache_list, struct ami_cache_node *node)
+{
+#ifdef __amigaos4__
+	RemoveSkipNode(cache_list->list, node->skip_node.sn_Key);
+#else
+	DelObject(node);
+#endif
+}
 
 struct ami_cache_node *ami_cache_locate(struct ami_cache_lst *cache_list, const char *str)
 {
@@ -162,7 +170,7 @@ struct ami_cache_node *ami_cache_locate(struct ami_cache_lst *cache_list, const 
 #endif
 
 	if(nodedata) {
-		GetSysTime(&nodedata->lastused);
+		if(cache_list->cleanup) GetSysTime(&nodedata->lastused);
 		return nodedata;
 	}
 
@@ -181,7 +189,7 @@ struct ami_cache_node *ami_cache_alloc_entry(struct ami_cache_lst *cache_list, c
 	nodedata = malloc(sizeof(struct ami_cache_node));
 #endif
 
-	GetSysTime(&nodedata->lastused);
+	if(cache_list->cleanup) GetSysTime(&nodedata->lastused);
 
 	return nodedata;
 }
@@ -203,7 +211,7 @@ void ami_cache_fini(struct ami_cache_lst *cache_list)
 
 	ami_schedule(-1, (void *)ami_cache_cleanup, cache_list->list);
 #ifdef __amigaos4__
-	ami_cache_del_skiplist(cache_list->list);
+	ami_cache_del_skiplist(cache_list);
 #else
 	FreeObjList(cache_list->list);
 #endif
@@ -211,7 +219,7 @@ void ami_cache_fini(struct ami_cache_lst *cache_list)
 	if(cache_list) free(cache_list);
 }
 
-struct ami_cache_lst *ami_cache_init(BOOL (*callback)(void *node))
+struct ami_cache_lst *ami_cache_init(BOOL (*callback)(void *node), BOOL cleanup)
 {
 	struct ami_cache_lst *lst = malloc(sizeof(struct ami_cache_lst));
 
@@ -225,9 +233,10 @@ struct ami_cache_lst *ami_cache_init(BOOL (*callback)(void *node))
 
 	lst->list = ami_cache_list;
 	lst->callback = callback;
+	lst->cleanup = cleanup;
 
 	/* run first cleanup in ten minutes */
-	ami_schedule(600000, (void *)ami_cache_cleanup, ami_cache_list);
+	if(cleanup) ami_schedule(600000, (void *)ami_cache_cleanup, ami_cache_list);
 	
 	return (void *)lst;
 }
