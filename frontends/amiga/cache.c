@@ -203,7 +203,7 @@ void ami_cache_fini(struct ami_cache_lst *cache_list)
 
 	ami_schedule(-1, (void *)ami_cache_cleanup, cache_list->list);
 #ifdef __amigaos4__
-	ami_cache_del_skiplist(cache_list->list);
+	ami_cache_del_skiplist(cache_list);
 #else
 	FreeObjList(cache_list->list);
 #endif
