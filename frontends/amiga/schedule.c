@@ -119,9 +119,11 @@ ami_schedule_locate(void (*callback)(void *p), void *p, bool remove)
 
 	struct ami_cache_node *found_node = ami_cache_locate(schedule_list, (char *)&str);
 
-	if (found_node) return nscb = found_node->userdata;
+	if (found_node) {
+		nscb = found_node->userdata;
 
-	if (remove == true) ami_cache_remove_node(schedule_list, found_node);
+		if (remove == true) ami_cache_remove_node(schedule_list, found_node);
+	}
 
 	return nscb;
 }
