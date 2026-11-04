@@ -21,6 +21,10 @@
 
 #include <proto/timer.h>
 
+#ifdef __amigaos4__
+#include <proto/utility.h>
+#endif
+
 struct ami_cache_lst
 {
 #ifdef __amigaos4__
