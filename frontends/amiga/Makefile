@@ -22,7 +22,7 @@ LDFLAGS += $(shell $(PKG_CONFIG) --static --libs libcurl)
 LDFLAGS += $(shell $(PKG_CONFIG) --libs tre)
 LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
-LDFLAGS += -lpbl -liconv
+LDFLAGS += -liconv
 
 ifeq ($(NETSURF_USE_OPENSSL),YES)
   LDFLAGS += $(shell $(PKG_CONFIG) --static --libs openssl)

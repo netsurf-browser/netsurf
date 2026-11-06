@@ -49,6 +49,6 @@ void ami_font_cache_fini(void)
 
 void ami_font_cache_init(void)
 {
-	ami_font_cache_list = ami_cache_init(ami_font_bullet_close);
+	ami_font_cache_list = ami_cache_init(ami_font_bullet_close, TRUE);
 }
 

@@ -110,6 +110,6 @@ void ami_font_dfcache_fini(void)
 
 void ami_font_dfcache_init(void)
 {
-	ami_font_dfcache_list = ami_cache_init(ami_font_dfcache_close_font);
+	ami_font_dfcache_list = ami_cache_init(ami_font_dfcache_close_font, TRUE);
 }
 
