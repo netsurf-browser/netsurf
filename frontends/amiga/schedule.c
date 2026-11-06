@@ -41,7 +41,8 @@ struct nscallback
 	void *restrict p;
 };
 
-static struct nscallback *tioreq;
+static struct nscallback *tioreq_vbl;
+static struct nscallback *tioreq_mhz;
 struct Device *TimerBase;
 #ifdef __amigaos4__
 struct TimerIFace *ITimer;
@@ -252,18 +253,26 @@ static bool ami_scheduler_run(struct nscallback *nscb)
 static void ami_schedule_open_timer(struct MsgPort *msgport)
 {
 #ifdef __amigaos4__
-	tioreq = (struct nscallback *)AllocSysObjectTags(ASOT_IOREQUEST,
+	tioreq_vbl = (struct nscallback *)AllocSysObjectTags(ASOT_IOREQUEST,
+				ASOIOR_Size, sizeof(struct nscallback),
+				ASOIOR_ReplyPort, msgport,
+				ASO_NoTrack, FALSE,
+				TAG_DONE);
+
+	tioreq_mhz = (struct nscallback *)AllocSysObjectTags(ASOT_IOREQUEST,
 				ASOIOR_Size, sizeof(struct nscallback),
 				ASOIOR_ReplyPort, msgport,
 				ASO_NoTrack, FALSE,
 				TAG_DONE);
 #else
-	tioreq = (struct nscallback *)CreateIORequest(msgport, sizeof(struct nscallback));
+	tioreq_vbl = (struct nscallback *)CreateIORequest(msgport, sizeof(struct nscallback));
+	tioreq_mhz = (struct nscallback *)CreateIORequest(msgport, sizeof(struct nscallback));
 #endif
 
-	OpenDevice("timer.device", UNIT_MICROHZ, (struct IORequest *)tioreq, 0);
+	OpenDevice("timer.device", UNIT_VBLANK, (struct IORequest *)tioreq_vbl, 0);
+	OpenDevice("timer.device", UNIT_MICROHZ, (struct IORequest *)tioreq_mhz, 0);
 
-	TimerBase = (struct Device *)tioreq->timereq.Request.io_Device;
+	TimerBase = (struct Device *)tioreq_vbl->timereq.Request.io_Device;
 #ifdef __amigaos4__
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase, "main", 1, NULL);
 #endif
@@ -274,8 +283,12 @@ static void ami_schedule_close_timer(void)
 #ifdef __amigaos4__
 	if(ITimer) DropInterface((struct Interface *)ITimer);
 #endif
-	CloseDevice((struct IORequest *) tioreq);
-	FreeSysObject(ASOT_IOREQUEST, tioreq);
+
+	CloseDevice((struct IORequest *) tioreq_vbl);
+	FreeSysObject(ASOT_IOREQUEST, tioreq_vbl);
+
+	CloseDevice((struct IORequest *) tioreq_mhz);
+	FreeSysObject(ASOT_IOREQUEST, tioreq_mhz);
 }
 
 /* exported interface documented in amiga/schedule.h */
@@ -308,7 +321,8 @@ void ami_schedule_free(void)
 nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 {
 	struct nscallback *nscb;
-
+	struct nscallback *tioreq = tioreq_mhz;
+	
 	if(t == 0) t = 1;
 
 	if(schedule_list == NULL) return NSERROR_INIT_FAILED;
@@ -316,6 +330,11 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 
 	if ((nscb = ami_schedule_locate(callback, p, false))) {
 		return ami_schedule_reschedule(nscb, t);
+	}
+
+	if(__builtin_expect((t > 500), 0)) {
+		NSLOG(netsurf, INFO, "Using vblank timer for %d ms", t);
+		tioreq = tioreq_vbl;
 	}
 
 #ifdef __amigaos4__
