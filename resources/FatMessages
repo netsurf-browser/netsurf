@@ -9242,6 +9242,8 @@ it.ami.PopupMenu:Usa menu popup nei form
 nl.ami.PopupMenu:Gebruik popup-menu for formulieren
 zh_CN.ami.PopupMenu:对表格使用弹出式菜单
 
+en.ami.OptionThumbnails:Create history thumbnails
+
 en.all.Clipboard:Clipboard
 de.all.Clipboard:Clipboard
 fr.all.Clipboard:Presse-papiers

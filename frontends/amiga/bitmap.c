@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2026 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -755,6 +755,8 @@ void ami_bitmap_fini(void)
 
 static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
 {
+	if(nsoption_bool(history_thumbnails) == false) return NSERROR_OK;
+
 	NSLOG(netsurf, INFO, "Entering bitmap_render");
 
 	int plot_width;

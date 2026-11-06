@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 - 2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2009 - 2026 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -101,6 +101,7 @@ enum
 	GID_OPTS_REFERRAL,
 	GID_OPTS_DONOTTRACK,
 	GID_OPTS_FASTSCROLL,
+	GID_OPTS_THUMBNAILS,
 	GID_OPTS_SCREEN,
 	GID_OPTS_SCREENMODE,
 	GID_OPTS_SCREENNAME,
@@ -437,6 +438,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	gadlab[GID_OPTS_REFERRAL] = (char *)ami_utf8_easy((char *)messages_get("SendReferer"));
 	gadlab[GID_OPTS_DONOTTRACK] = (char *)ami_utf8_easy((char *)messages_get("DoNotTrack"));
 	gadlab[GID_OPTS_FASTSCROLL] = (char *)ami_utf8_easy((char *)messages_get("FastScrolling"));
+	gadlab[GID_OPTS_THUMBNAILS] = (char *)ami_utf8_easy((char *)messages_get("OptionThumbnails"));
 	gadlab[GID_OPTS_WIN_SIMPLE] = (char *)ami_utf8_easy((char *)messages_get("SimpleRefresh"));
 	gadlab[GID_OPTS_THEME] = (char *)ami_utf8_easy((char *)messages_get("ThemeGUI"));
 	gadlab[GID_OPTS_THEMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("ThemePage"));
@@ -1554,30 +1556,40 @@ void ami_gui_opts_open(void)
 									CHILD_WeightedHeight, 0,
 								LayoutEnd, // hgroup
 								CHILD_WeightedHeight, 0,
-								LAYOUT_AddChild, LayoutHObj,
+								LAYOUT_AddChild, LayoutVObj,
 									LAYOUT_BevelStyle, BVS_GROUP,
 									LAYOUT_Label, gadlab[GRP_OPTS_MISC],
 									LAYOUT_SpaceOuter, TRUE,
-			               			LAYOUT_AddChild, gow->objects[GID_OPTS_FASTSCROLL] = CheckBoxObj,
-      	              					GA_ID, GID_OPTS_FASTSCROLL,
-         	           					GA_RelVerify, TRUE,
-         	           					GA_Text, gadlab[GID_OPTS_FASTSCROLL],
-         	           					GA_Selected, nsoption_bool(faster_scroll),
-            	    				CheckBoxEnd,
-	        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_SELECTMENU] = CheckBoxObj,
-										GA_ID, GID_OPTS_SELECTMENU,
-										GA_RelVerify, TRUE,
-										GA_Text, gadlab[GID_OPTS_SELECTMENU],
-										GA_Selected, !nsoption_bool(core_select_menu),
-										GA_Disabled, !ami_selectmenu_is_safe(),
-           	    					CheckBoxEnd,
-	        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_ENABLECSS] = CheckBoxObj,
-										GA_ID, GID_OPTS_ENABLECSS,
-										GA_RelVerify, TRUE,
-										GA_Text, gadlab[GID_OPTS_ENABLECSS],
-										GA_Selected, nsoption_bool(author_level_css),
-           	    					CheckBoxEnd,
-								LayoutEnd, // misc
+									LAYOUT_AddChild, LayoutHObj,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_FASTSCROLL] = CheckBoxObj,
+											GA_ID, GID_OPTS_FASTSCROLL,
+											GA_RelVerify, TRUE,
+											GA_Text, gadlab[GID_OPTS_FASTSCROLL],
+											GA_Selected, nsoption_bool(faster_scroll),
+										CheckBoxEnd,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_SELECTMENU] = CheckBoxObj,
+											GA_ID, GID_OPTS_SELECTMENU,
+											GA_RelVerify, TRUE,
+											GA_Text, gadlab[GID_OPTS_SELECTMENU],
+											GA_Selected, !nsoption_bool(core_select_menu),
+											GA_Disabled, !ami_selectmenu_is_safe(),
+										CheckBoxEnd,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_ENABLECSS] = CheckBoxObj,
+											GA_ID, GID_OPTS_ENABLECSS,
+											GA_RelVerify, TRUE,
+											GA_Text, gadlab[GID_OPTS_ENABLECSS],
+											GA_Selected, nsoption_bool(author_level_css),
+										CheckBoxEnd,
+									LayoutEnd,
+									LAYOUT_AddChild, LayoutHObj,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_THUMBNAILS] = CheckBoxObj,
+											GA_ID, GID_OPTS_THUMBNAILS,
+											GA_RelVerify, TRUE,
+											GA_Text, gadlab[GID_OPTS_THUMBNAILS],
+											GA_Selected, nsoption_bool(history_thumbnails),
+										CheckBoxEnd,
+									LayoutEnd,
+								LayoutEnd, // misc vobj
 								CHILD_WeightedHeight, 0,
 
 							LayoutEnd, // page vgroup
@@ -1837,6 +1849,13 @@ static void ami_gui_opts_use(bool save)
 		nsoption_set_bool(faster_scroll, true);
 	} else {
 		nsoption_set_bool(faster_scroll, false);
+	}
+	
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_THUMBNAILS],(ULONG *)&data);
+	if (data) {
+		nsoption_set_bool(history_thumbnails, true);
+	} else {
+		nsoption_set_bool(history_thumbnails, false);
 	}
 
 	GetAttr(RADIOBUTTON_Selected,gow->objects[GID_OPTS_SCREEN],(ULONG *)&data);

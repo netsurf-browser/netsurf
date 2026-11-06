@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2025 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2026 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -78,6 +78,9 @@ NSOPTION_BOOL(accept_lang_locale, true)
 
 /* Local charset when using iconv */
 NSOPTION_STRING(local_charset, "ISO-8859-1")
+
+/* Create history thumbnails */
+NSOPTION_BOOL(history_thumbnails, false)
 
 #ifdef __amigaos4__
 /** Options relevant for OS4 only **/
