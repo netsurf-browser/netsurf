@@ -23,6 +23,8 @@
 
 #ifdef __amigaos4__
 #include <proto/utility.h>
+#else
+#include "amiga/object.h"
 #endif
 
 struct ami_cache_lst
@@ -41,6 +43,8 @@ struct ami_cache_node
 {
 #ifdef __amigaos4__
 	struct SkipNode skip_node;
+#else
+	struct nsObject *nsobj;
 #endif
 	struct TimeVal lastused;
 	void *userdata;

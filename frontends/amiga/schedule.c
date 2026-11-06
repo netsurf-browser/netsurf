@@ -111,8 +111,8 @@ ami_schedule_locate(void (*callback)(void *p), void *p, bool remove)
 {
 	struct nscallback *nscb = NULL;
 
-	char str[20];
-	snprintf(str, 20, "%p:%p", callback, p);
+	char str[40];
+	snprintf(str, 40, "%p:%p", callback, p);
 	
 	/* check there is something on the list */
 	if (schedule_list == NULL) return NULL;
@@ -336,8 +336,8 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 	nscb->callback = callback;
 	nscb->p = p;
 	
-	char str[20];
-	snprintf(str, 20, "%p:%p", callback, p);
+	char str[40];
+	snprintf(str, 40, "%p:%p", callback, p);
 
 	struct ami_cache_node *node = ami_cache_alloc_entry(schedule_list, (char *)&str);
 	if(node) {	

@@ -143,6 +143,23 @@ static void ami_cache_del_skiplist(struct ami_cache_lst *cache_list)
 
 	DeleteSkipList(cache_list->list);
 }
+#else
+static void ami_cache_freeobjlist(struct ami_cache_lst *cache_list)
+{
+	struct ami_cache_node *node;
+	struct ami_cache_node *nnode;
+
+	if(!IsMinListEmpty((struct MinList *)cache_list)) {
+		node = (struct nsObject *)GetHead((struct List *)cache_list);
+
+		do {
+			nnode = (struct nsObject *)GetSucc((struct Node *)node);
+			cache_list->callback(node); /* ignore return - we are exiting anyway */
+			DelObject(node->nsobj);
+		} while((node = nnode));
+	}
+	free(cache_list->list);
+}
 #endif
 
 void ami_cache_remove_node(struct ami_cache_lst *cache_list, struct ami_cache_node *node)
@@ -150,7 +167,7 @@ void ami_cache_remove_node(struct ami_cache_lst *cache_list, struct ami_cache_no
 #ifdef __amigaos4__
 	RemoveSkipNode(cache_list->list, node->skip_node.sn_Key);
 #else
-	DelObject(node);
+	DelObject(node->nsobj);
 #endif
 }
 
@@ -201,6 +218,8 @@ void ami_cache_insert(struct ami_cache_lst *cache_list, void *nodedata, const ch
 	if(node) {
 		node->objstruct = nodedata;
 		node->dtz_Node.ln_Name = ami_cache_name(str);
+		struct ami_cache_node *ndata = (struct ami_cache_node *)nodedata;
+		ndata->nsobj = node;
 	}
 #endif
 }
@@ -209,11 +228,11 @@ void ami_cache_fini(struct ami_cache_lst *cache_list)
 {
 	NSLOG(netsurf, INFO, "Cleaning up cache %p", cache_list);
 
-	ami_schedule(-1, (void *)ami_cache_cleanup, cache_list->list);
+	if(cache_list->cleanup) ami_schedule(-1, (void *)ami_cache_cleanup, cache_list);
 #ifdef __amigaos4__
 	ami_cache_del_skiplist(cache_list);
 #else
-	FreeObjList(cache_list->list);
+	ami_cache_freeobjlist(cache_list);
 #endif
 
 	if(cache_list) free(cache_list);
@@ -236,7 +255,7 @@ struct ami_cache_lst *ami_cache_init(BOOL (*callback)(void *node), BOOL cleanup)
 	lst->cleanup = cleanup;
 
 	/* run first cleanup in ten minutes */
-	if(cleanup) ami_schedule(600000, (void *)ami_cache_cleanup, ami_cache_list);
+	if(cleanup) ami_schedule(600000, (void *)ami_cache_cleanup, lst);
 	
 	return (void *)lst;
 }

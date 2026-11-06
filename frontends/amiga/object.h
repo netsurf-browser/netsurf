@@ -20,6 +20,7 @@
 #define AMIGA_OBJECT_H
 
 #include <exec/lists.h>
+#include <stdbool.h>
 
 enum
 {
