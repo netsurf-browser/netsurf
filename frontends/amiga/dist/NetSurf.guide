@@ -387,7 +387,7 @@ There are a number of options which can be changed that will affect the speed of
 
 @{lindent 2}* Ensure NetSurf is running on a @{b}32-bit screen@{ub} if possible.  NetSurf down-converts from 32-bit ARGB for display, which can impact performance.@{lindent 0}
 
-@{lindent 2}* In preferences, General tab, enable @{b}Fast scrolling@{ub}.@{lindent 0}
+@{lindent 2}* In preferences, Advanced tab, enable @{b}Fast scrolling@{ub} and disable @{b}History thumbnails@{b}.@{lindent 0}
 
 @{lindent 2}* In preferences, Rendering tab set:
 @{b}Cache native versions@{ub} to @{b}Scaled@{ub} (or preferably @{b}All@{ub}, but this will use more graphics mem, and scaling images is a bigger performance hit)
@@ -396,6 +396,8 @@ Deselect @{b}Higher quality scaling@{ub}, this will be very slow if not done in 
 @{lindent 2}* In @{"Options" link Options}, increase redraw_tile_size_x/y (increasing this value uses more graphics mem)@{lindent 0}
 
 @{lindent 2}* In @{"Options" link Options}, set font_antialiasing:0@{lindent 0}
+
+@{lindent 2}* In the Browser menu, disable some or all of Javascript, CSS and background/foreground images.@{lindent 0}
 @endnode
 
 @node Logging "Logging"
