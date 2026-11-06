@@ -146,16 +146,16 @@ static void ami_cache_del_skiplist(struct ami_cache_lst *cache_list)
 #else
 static void ami_cache_freeobjlist(struct ami_cache_lst *cache_list)
 {
-	struct ami_cache_node *node;
-	struct ami_cache_node *nnode;
+	struct nsObject *node;
+	struct nsObject *nnode;
 
-	if(!IsMinListEmpty((struct MinList *)cache_list)) {
-		node = (struct nsObject *)GetHead((struct List *)cache_list);
+	if(!IsMinListEmpty((struct MinList *)cache_list->list)) {
+		node = (struct nsObject *)GetHead((struct List *)cache_list->list);
 
 		do {
 			nnode = (struct nsObject *)GetSucc((struct Node *)node);
-			cache_list->callback(node); /* ignore return - we are exiting anyway */
-			DelObject(node->nsobj);
+			cache_list->callback(node->objstruct); /* ignore return - we are exiting anyway */
+			DelObject(node);
 		} while((node = nnode));
 	}
 	free(cache_list->list);
