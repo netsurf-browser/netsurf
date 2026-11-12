@@ -1231,6 +1231,13 @@ static CURLcode fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_PROXY, NULL);
 	}
 
+#if defined(nsamiga) && !defined(__amigaos4__)
+	/* Allow overriding DNS servers - needed for c-ares on non-Roadshow stacks */
+	if (nsoption_bool(dns_override) &&
+	    (nsoption_charp(dns_servers) != NULL)) {
+		SETOPT(CURLOPT_DNS_SERVERS, nsoption_charp(dns_servers));
+	}
+#endif
 
 	if (curl_with_openssl) {
 		SETOPT(CURLOPT_SSL_CIPHER_LIST,

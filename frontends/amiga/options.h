@@ -104,5 +104,7 @@ NSOPTION_BOOL(friend_bitmap, false)
  */
 NSOPTION_BOOL(invert_alpha, true)
 
+/* Override DNS on c-ares builds as only Roadshow will supply DNS servers */
+NSOPTION_BOOL(dns_override, true)
+NSOPTION_STRING(dns_servers, "1.1.1.2,1.0.0.2") /* Cloudflare */
 #endif
-
