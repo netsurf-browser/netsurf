@@ -82,6 +82,12 @@ NSOPTION_STRING(local_charset, "ISO-8859-1")
 /* Create history thumbnails */
 NSOPTION_BOOL(history_thumbnails, false)
 
+/* Override DNS on c-ares builds as only Roadshow will supply DNS servers */
+NSOPTION_BOOL(dns_override, true)
+
+/* Default DNS for c-ares builds */
+NSOPTION_STRING(dns_servers, "1.1.1.2,1.0.0.2") /* Cloudflare */
+
 #ifdef __amigaos4__
 /** Options relevant for OS4 only **/
 
@@ -93,7 +99,6 @@ NSOPTION_BOOL(use_extmem, true)
 
 /* Don't invert alpha channel (guigfx) */
 NSOPTION_BOOL(invert_alpha, false)
-
 #else
 /** Options relevant for OS3 only **/
 
@@ -103,8 +108,4 @@ NSOPTION_BOOL(friend_bitmap, false)
  * Workaround for guigfx/render bug
  */
 NSOPTION_BOOL(invert_alpha, true)
-
-/* Override DNS on c-ares builds as only Roadshow will supply DNS servers */
-NSOPTION_BOOL(dns_override, true)
-NSOPTION_STRING(dns_servers, "1.1.1.2,1.0.0.2") /* Cloudflare */
 #endif

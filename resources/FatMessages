@@ -8851,6 +8851,12 @@ it.all.FetchesCached:Su cache
 nl.all.FetchesCached:Gebufferde verbindingen
 zh_CN.all.FetchesCached:已缓存连接
 
+en.ami.DNS:DNS
+
+en.ami.DNSSystem:Use system DNS (Roadshow)
+
+en.ami.DNSManual:Specify DNS servers
+
 # Rendering tab
 #
 

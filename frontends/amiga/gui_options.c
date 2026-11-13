@@ -84,6 +84,8 @@
 #include "amiga/utf8.h"
 #include "amiga/plotters.h"
 
+#include <curl/curl.h>
+
 enum
 {
 	OID_MAIN = 0,
@@ -121,6 +123,8 @@ enum
 	GID_OPTS_FETCHMAX,
 	GID_OPTS_FETCHHOST,
 	GID_OPTS_FETCHCACHE,
+	GID_OPTS_DNS,
+	GID_OPTS_DNS_SERVERS,
 	GID_OPTS_NATIVEBM,
 	GID_OPTS_SCALEQ,
 	GID_OPTS_DITHERQ,
@@ -182,6 +186,7 @@ enum
 	GRP_OPTS_MOUSE,
 	GRP_OPTS_PROXY,
 	GRP_OPTS_FETCHING,
+	GRP_OPTS_DNS,
 	GRP_OPTS_IMAGES,
 	GRP_OPTS_ANIMS,
 	GRP_OPTS_DPI,
@@ -219,6 +224,7 @@ enum
 #define OPTS_MAX_SCREEN 4
 #define OPTS_MAX_THEMEPAGE 3
 #define OPTS_MAX_PROXY 5
+#define OPTS_MAX_DNS 3
 #define OPTS_MAX_NATIVEBM 4
 #define OPTS_MAX_DITHER 4
 
@@ -237,6 +243,7 @@ struct ami_gui_opts_window {
 	struct List screenoptslist;
 	struct List pagethemeoptslist;
 	struct List proxyoptslist;
+	struct List dnsoptslist;
 	struct List nativebmoptslist;
 	struct List ditheroptslist;
 	struct List fontoptslist;
@@ -294,6 +301,7 @@ static CONST_STRPTR tabs[OPTS_MAX_TABS];
 static STRPTR screenopts[OPTS_MAX_SCREEN];
 static CONST_STRPTR pagethemeopts[OPTS_MAX_THEMEPAGE];
 static CONST_STRPTR proxyopts[OPTS_MAX_PROXY];
+static CONST_STRPTR dnsopts[OPTS_MAX_DNS];
 static CONST_STRPTR nativebmopts[OPTS_MAX_NATIVEBM];
 static CONST_STRPTR ditheropts[OPTS_MAX_DITHER];
 static CONST_STRPTR fontopts[6];
@@ -409,6 +417,10 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	proxyopts[3] = (char *)ami_utf8_easy((char *)messages_get("ProxyNTLM"));
 	proxyopts[4] = NULL;
 
+	dnsopts[0] = (char *)ami_utf8_easy((char *)messages_get("DNSSystem"));
+	dnsopts[1] = (char *)ami_utf8_easy((char *)messages_get("DNSManual"));
+	dnsopts[2] = NULL;
+
 	nativebmopts[0] = (char *)ami_utf8_easy((char *)messages_get("None"));
 	nativebmopts[1] = (char *)ami_utf8_easy((char *)messages_get("Scaled"));
 	nativebmopts[2] = (char *)ami_utf8_easy((char *)messages_get("All"));
@@ -518,6 +530,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	gadlab[GRP_OPTS_MOUSE] = (char *)ami_utf8_easy((char *)messages_get("MousePointers"));
 	gadlab[GRP_OPTS_PROXY] = (char *)ami_utf8_easy((char *)messages_get("Proxy"));
 	gadlab[GRP_OPTS_FETCHING] = (char *)ami_utf8_easy((char *)messages_get("Fetching"));
+	gadlab[GRP_OPTS_DNS] = (char *)ami_utf8_easy((char *)messages_get("DNS"));
 	gadlab[GRP_OPTS_IMAGES] = (char *)ami_utf8_easy((char *)messages_get("Images"));
 	gadlab[GRP_OPTS_ANIMS] = (char *)ami_utf8_easy((char *)messages_get("Animations"));
 	gadlab[GRP_OPTS_DPI] = (char *)ami_utf8_easy((char *)messages_get("Resolution"));
@@ -550,6 +563,7 @@ static void ami_gui_opts_setup(struct ami_gui_opts_window *gow)
 	ami_gui_opts_array_to_list(&gow->screenoptslist, screenopts, NSA_LIST_RADIO);
 	ami_gui_opts_array_to_list(&gow->pagethemeoptslist, pagethemeopts, NSA_LIST_CHOOSER);
 	ami_gui_opts_array_to_list(&gow->proxyoptslist, proxyopts, NSA_LIST_CHOOSER);
+	ami_gui_opts_array_to_list(&gow->dnsoptslist, dnsopts, NSA_LIST_RADIO);
 	ami_gui_opts_array_to_list(&gow->nativebmoptslist, nativebmopts, NSA_LIST_CHOOSER);
 	ami_gui_opts_array_to_list(&gow->ditheroptslist, ditheropts, NSA_LIST_CHOOSER);
 	ami_gui_opts_array_to_list(&gow->fontoptslist, fontopts, NSA_LIST_CHOOSER);
@@ -575,6 +589,9 @@ static void ami_gui_opts_free(struct ami_gui_opts_window *gow)
 	for(i = 0; i < OPTS_MAX_PROXY; i++)
 		if(proxyopts[i]) free((APTR)proxyopts[i]);
 
+        for(i = 0; i < OPTS_MAX_DNS; i++)
+                if(dnsopts[i]) free((APTR)dnsopts[i]);
+
 	for(i = 0; i < OPTS_MAX_NATIVEBM; i++)
 		if(nativebmopts[i]) free((APTR)nativebmopts[i]);
 
@@ -585,6 +602,7 @@ static void ami_gui_opts_free(struct ami_gui_opts_window *gow)
 	ami_gui_opts_free_list(&gow->screenoptslist, NSA_LIST_RADIO);
 	ami_gui_opts_free_list(&gow->pagethemeoptslist, NSA_LIST_CHOOSER);
 	ami_gui_opts_free_list(&gow->proxyoptslist, NSA_LIST_CHOOSER);
+	ami_gui_opts_free_list(&gow->dnsoptslist, NSA_LIST_RADIO);
 	ami_gui_opts_free_list(&gow->nativebmoptslist, NSA_LIST_CHOOSER);
 	ami_gui_opts_free_list(&gow->ditheroptslist, NSA_LIST_CHOOSER);
 	ami_gui_opts_free_list(&gow->fontoptslist, NSA_LIST_CHOOSER);
@@ -604,7 +622,10 @@ void ami_gui_opts_open(void)
 	BOOL ditherdisable = TRUE;
 	BOOL download_notify_disabled = FALSE, tab_always_show_disabled = FALSE;
 	BOOL ptr_disable = FALSE;
-	char *homepage_url_lc = ami_utf8_easy(nsoption_charp(homepage_url));
+	BOOL dns_disable = TRUE;
+	uint16 dnsoptsselected = 0;
+	curl_version_info_data *cvid = curl_version_info(CURLVERSION_NOW);
+	char *homepage_url_lc = NULL;
 
 	struct TextAttr fontsans, fontserif, fontmono, fontcursive, fontfantasy;
 
@@ -614,6 +635,11 @@ void ami_gui_opts_open(void)
 		ActivateWindow(gow->win);
 		return;
 	}
+
+	homepage_url_lc = ami_utf8_easy(nsoption_charp(homepage_url));
+
+	if(cvid->ares != NULL) dns_disable = FALSE;
+	if(nsoption_bool(dns_override) == true) dnsoptsselected = 1;
 
 #ifdef __amigaos4__
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 53, 42)) ptr_disable = TRUE;
@@ -1116,6 +1142,34 @@ void ami_gui_opts_open(void)
 									LabelEnd,
 								LayoutEnd,
 								CHILD_WeightedHeight, 0,
+
+								LAYOUT_AddChild, LayoutVObj, // DNS
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP,
+									LAYOUT_Label, gadlab[GRP_OPTS_DNS],
+									LAYOUT_AddChild, LayoutHObj,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_DNS] = RadioButtonObj,
+											GA_ID, GID_OPTS_DNS,
+											GA_RelVerify, TRUE,
+											GA_Disabled, dns_disable,
+#ifdef __amigaos4__
+											GA_Text, dnsopts,
+#else
+											RADIOBUTTON_Labels, &gow->screenoptslist,
+#endif
+											RADIOBUTTON_Selected, dnsoptsselected,
+										RadioButtonEnd,
+										CHILD_WeightedWidth,0,
+
+										LAYOUT_AddChild, gow->objects[GID_OPTS_DNS_SERVERS] = StringObj,
+											GA_ID, GID_OPTS_DNS_SERVERS,
+											GA_RelVerify, TRUE,
+											GA_Disabled, !nsoption_bool(dns_override),
+											STRINGA_TextVal, nsoption_charp(dns_servers),
+											STRINGA_BufferPos, 0,
+										StringEnd,
+									LayoutEnd,
+								LayoutEnd,
 							LayoutEnd, // page vgroup
 							CHILD_WeightedHeight, 0,
 						PageEnd, // page object
@@ -1945,6 +1999,16 @@ static void ami_gui_opts_use(bool save)
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHHOST],(ULONG *)&nsoption_int(max_fetchers_per_host));
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHCACHE],(ULONG *)&nsoption_int(max_cached_fetch_handles));
 
+	GetAttr(RADIOBUTTON_Selected, gow->objects[GID_OPTS_DNS], (ULONG *)&data);
+	if(data == 0) {
+		nsoption_set_bool(dns_override, false);
+	} else {
+		nsoption_set_bool(dns_override, true);
+		GetAttr(STRINGA_TextVal, gow->objects[GID_OPTS_DNS_SERVERS], (ULONG *)&data);
+		/* TODO validate servers */
+		nsoption_set_charp(dns_servers, (char *)strdup((char *)data));
+	}
+
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_NATIVEBM],(ULONG *)&nsoption_int(cache_bitmaps));
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_SCALEQ],(ULONG *)&data);
@@ -2358,6 +2422,21 @@ static BOOL ami_gui_opts_event(void *w)
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
 								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_BYPASS],
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
+							break;
+						}
+					break;
+
+					case GID_OPTS_DNS:
+						GetAttr(RADIOBUTTON_Selected, gow->objects[GID_OPTS_DNS], (ULONG *)&data);
+						switch(data) {
+							case 0:
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_DNS_SERVERS],
+									gow->win, NULL, GA_Disabled, TRUE, TAG_DONE);
+							break;
+
+							case 1:
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_DNS_SERVERS],
+									gow->win, NULL, GA_Disabled, FALSE, TAG_DONE);
 							break;
 						}
 					break;

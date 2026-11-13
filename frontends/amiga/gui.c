@@ -1100,6 +1100,9 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 							DFCS_MIMENAME);
 	nsoption_set_charp(local_charset, strdup(encname));
 	nsoption_set_int(local_codeset, codeset);
+
+	/* OS4 uses Roadshow by default, so use system DNS */
+	nsoption_set_bool(dns_override, false);
 #else
 	nsoption_set_bool(download_notify, false);
 	nsoption_set_bool(font_antialiasing, false);

@@ -1231,7 +1231,7 @@ static CURLcode fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_PROXY, NULL);
 	}
 
-#if defined(nsamiga) && !defined(__amigaos4__)
+#if defined(nsamiga)
 	/* Allow overriding DNS servers - needed for c-ares on non-Roadshow stacks */
 	if (nsoption_bool(dns_override) &&
 	    (nsoption_charp(dns_servers) != NULL)) {
