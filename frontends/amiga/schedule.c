@@ -37,8 +37,9 @@ struct nscallback
 {
 	struct TimeRequest timereq;
 	struct TimeVal tv; /* time we expect the event to occur */
-	void *restrict callback;
-	void *restrict p;
+	void *callback;
+	void *p;
+	struct ami_cache_node *node;
 };
 
 static struct nscallback *tioreq_vbl;
@@ -148,6 +149,31 @@ static nserror ami_schedule_reschedule(struct nscallback *nscb, int t)
 }
 
 /**
+ * Remove a node from the scheduler list before processing
+ * This prevents a lookup
+ *
+ * \param  node  cache node object
+ *
+ */
+
+static nserror ami_schedule_remove_node(struct ami_cache_node *node)
+{
+	if (node) {
+		struct nscallback *nscb = node->userdata;
+		ami_cache_remove_node(schedule_list, node);
+		if(nscb != NULL) {
+#ifdef __amigaos4__
+			FreeSysObject(ASOT_IOREQUEST, nscb);
+#else
+			FreeVec(nscb);
+#endif
+		}
+	}
+
+	return NSERROR_OK;
+}
+
+/**
  * Unschedule a callback.
  *
  * \param  callback  callback function
@@ -244,7 +270,7 @@ static bool ami_scheduler_run(struct nscallback *nscb)
 	callback = nscb->callback;
 	p = nscb->p;
 
-	schedule_remove(callback, p, false); /* this does a lookup as we don't know if we're the first item on the heap */
+	ami_schedule_remove_node(nscb->node); /* Remove from the list before running */
 
 	callback(p);
 	return true;
@@ -354,16 +380,18 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 
 	nscb->callback = callback;
 	nscb->p = p;
-	
+
 	char str[40];
 	snprintf(str, 40, "%p:%p", callback, p);
 
 	struct ami_cache_node *node = ami_cache_alloc_entry(schedule_list, (char *)&str);
-	if(node) {	
+	nscb->node = node;
+
+	if(node) {
 		node->userdata = nscb;
 		ami_cache_insert(schedule_list, node, (char *)&str);
 	}
-	
+
 	return NSERROR_OK;
 
 }
