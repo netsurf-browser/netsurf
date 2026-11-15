@@ -202,7 +202,7 @@ struct ami_cache_node *ami_cache_locate(struct ami_cache_lst *cache_list, const 
 		return nodedata;
 	}
 
-	NSLOG(netsurf, INFO, "cache miss: [%p] %s (%x)", cache_list, str, lws);
+	NSLOG(netsurf, INFO, "cache miss: [%p] %s", cache_list, str);
 	return NULL;
 }
 
