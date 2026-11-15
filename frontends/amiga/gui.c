@@ -1127,8 +1127,13 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	nsoption_setnull_charp(font_unicode_file,
 			       (char *)strdup(temp));
 
+#ifdef WITH_AMISSL
+	nsoption_setnull_charp(ca_path,
+				(char *)strdup("AmiSSL:Certs"));
+#else
 	nsoption_setnull_charp(ca_bundle,
 			       (char *)strdup("PROGDIR:Resources/ca-bundle"));
+#endif
 
 	/* Regular font defaults are set in font.c */
 
