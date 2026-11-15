@@ -1155,7 +1155,7 @@ void ami_gui_opts_open(void)
 #ifdef __amigaos4__
 											GA_Text, dnsopts,
 #else
-											RADIOBUTTON_Labels, &gow->screenoptslist,
+											RADIOBUTTON_Labels, &gow->dnsoptslist,
 #endif
 											RADIOBUTTON_Selected, dnsoptsselected,
 										RadioButtonEnd,
