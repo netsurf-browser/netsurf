@@ -35,24 +35,30 @@
 #include "amiga/object.h"
 #endif
 
+#include <libwapcaplet/libwapcaplet.h>
+
 #ifdef __amigaos4__
 static struct Hook ami_cache_hook;
 #endif
 
 #ifdef __amigaos4__
-static uint32 ami_cache_name(const char *str)
+static lwc_string *ami_cache_name(const char *str)
+{
+	lwc_error lerror;
+	lwc_string *lws = NULL;
+	lerror = lwc_intern_string(str, strlen(str), &lws);
+	if (lerror != lwc_error_ok)
+		return NULL;
+							
+	return lws;
+}
 #else
 static char *ami_cache_name(const char *str)
-#endif
 {
-#ifdef __amigaos4__
-	uint32 hash = 0;
-	hash = XXH32(str, strlen(str), 0);
-	return hash;
-#else
-	return strdup(str);
-#endif
+	return (char *)strdup(str);
 }
+#endif
+
 
 #ifdef __amigaos4__
 static LONG ami_cache_sort(struct Hook *hook, APTR key1, APTR key2)
@@ -77,14 +83,17 @@ static void ami_cache_cleanup(struct ami_cache_lst *cache_list)
 		nnode = (struct ami_cache_node *)GetNextSkipNode(cache_list->list, (struct SkipNode *)node);
 		GetSysTime(&curtime);
 		SubTime(&curtime, &node->lastused);
+
 		if(curtime.Seconds > 300)
 		{
+			lwc_string *lws = node->skip_node.sn_Key;
 			if(cache_list->callback(node)) {
 				NSLOG(netsurf, INFO,
 			      "Freeing %p not used for %ld seconds",
-			      node->skip_node.sn_Key,
+			      lws,
 			      curtime.Seconds);
-				RemoveSkipNode(cache_list->list, node->skip_node.sn_Key);
+				RemoveSkipNode(cache_list->list, lws);
+				lwc_string_unref(lws);
 			}
 		}
 	} while((node = nnode));
@@ -130,15 +139,16 @@ static void ami_cache_cleanup(struct ami_cache_lst *cache_list)
 #ifdef __amigaos4__
 static void ami_cache_del_skiplist(struct ami_cache_lst *cache_list)
 {
-	struct SkipNode *node;
-	struct SkipNode *nnode;
+	struct ami_cache_node *node;
+	struct ami_cache_node *nnode;
 
-	node = GetFirstSkipNode(cache_list->list);
+	node = (struct ami_cache_node *)GetFirstSkipNode(cache_list->list);
 	if(node == NULL) return;
 
 	do {
-		nnode = GetNextSkipNode(cache_list->list, node);
+		nnode = (struct ami_cache_node *)GetNextSkipNode(cache_list->list, (struct SkipNode *)node);
 		cache_list->callback((struct ami_cache_node *)node); /* ignore return - we are exiting anyway */
+		lwc_string_unref(node->skip_node.sn_Key);
 	} while((node = nnode));
 
 	DeleteSkipList(cache_list->list);
@@ -165,7 +175,9 @@ static void ami_cache_freeobjlist(struct ami_cache_lst *cache_list)
 void ami_cache_remove_node(struct ami_cache_lst *cache_list, struct ami_cache_node *node)
 {
 #ifdef __amigaos4__
-	RemoveSkipNode(cache_list->list, node->skip_node.sn_Key);
+	lwc_string *lws = node->skip_node.sn_Key;
+	RemoveSkipNode(cache_list->list, lws);
+	lwc_string_unref(lws);
 #else
 	DelObject(node->nsobj);
 #endif
@@ -174,11 +186,10 @@ void ami_cache_remove_node(struct ami_cache_lst *cache_list, struct ami_cache_no
 struct ami_cache_node *ami_cache_locate(struct ami_cache_lst *cache_list, const char *str)
 {
 	struct ami_cache_node *nodedata = NULL;
-	uint32 hash = 0;
 
 #ifdef __amigaos4__
-	hash = ami_cache_name(str);
-	nodedata = (struct ami_cache_node *)FindSkipNode(cache_list->list, (APTR)hash);
+	lwc_string *lws = ami_cache_name(str);
+	nodedata = (struct ami_cache_node *)FindSkipNode(cache_list->list, (APTR)lws);
 #else
 	if(str != NULL) {
 		struct nsObject *node = (struct nsObject *)FindIName((struct List *)cache_list->list, str);
@@ -191,7 +202,7 @@ struct ami_cache_node *ami_cache_locate(struct ami_cache_lst *cache_list, const 
 		return nodedata;
 	}
 
-	NSLOG(netsurf, INFO, "cache miss: [%p] %s (%x)", cache_list, str, hash);
+	NSLOG(netsurf, INFO, "cache miss: [%p] %s (%x)", cache_list, str, lws);
 	return NULL;
 }
 
@@ -200,8 +211,8 @@ struct ami_cache_node *ami_cache_alloc_entry(struct ami_cache_lst *cache_list, c
 	struct ami_cache_node *nodedata = NULL;
 
 #ifdef __amigaos4__
-	uint32 hash = ami_cache_name(str);
-	nodedata = (struct ami_cache_node *)InsertSkipNode(cache_list->list, (APTR)hash, sizeof(struct ami_cache_node));
+	lwc_string *lws = ami_cache_name(str);
+	nodedata = (struct ami_cache_node *)InsertSkipNode(cache_list->list, (APTR)lws, sizeof(struct ami_cache_node));
 #else
 	nodedata = malloc(sizeof(struct ami_cache_node));
 #endif
