@@ -12,34 +12,14 @@ jobs:
         test:
           - short-internet
 
+    env:
+      TARGET_WORKSPACE: "${{ github.workspace }}/projects"
+
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
       with:
         fetch-depth: 1
-
-    - name: apt-get install packages
-      run: sudo apt-get update -qq &&
-           sudo apt-get install --no-install-recommends -y
-               bison
-               build-essential
-               ccache
-               check
-               clang
-               flex
-               git
-               gperf
-               libcurl4-openssl-dev
-               libgtk-3-dev
-               libhtml-parser-perl
-               libjpeg-dev
-               libpng-dev
-               librsvg2-dev
-               libutf8proc-dev
-               llvm
-               pkg-config
-               python3-pyasyncore
-               wbritish # Needed for `/usr/share/dict/words`, used by test
 
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2
@@ -47,15 +27,22 @@ jobs:
         key: ${{ github.job }}
         max-size: 128M
 
-    - name: Build and install project libs
-      env:
-        REPO_BASE_URI: https://github.com/netsurf-browser
-      run: |
-          export TARGET_WORKSPACE="$(pwd)/projects"
-          source docs/env.sh
-          ns-clone -d -s -b ${GITHUB_REF_NAME}
-          ns-make-tools install
-          ns-make-libs install
+    - name: Setup
+      uses: netsurf-browser/ci-tools/.github/actions/setup@master
+      with:
+        env-sh: docs/env.sh
+        make-tools: true
+        extra-packages: >-
+          ccache
+          libcurl4-openssl-dev
+          libgtk-3-dev
+          libhtml-parser-perl
+          libjpeg-dev
+          libpng-dev
+          librsvg2-dev
+          libutf8proc-dev
+          python3-pyasyncore
+          wbritish
 
     - name: Disable -Werror
       # We can remove this step if we ever move to GitHub properly.
@@ -64,10 +51,11 @@ jobs:
 
     - name: Build NetSurf Monkey
       run: |
-          export TARGET_WORKSPACE="$(pwd)/projects"
-          source docs/env.sh
+          source docs/env.sh || exit 1
           make -j"$(nproc)" TARGET=monkey
 
     - name: Run Monkey Test
+      env:
+        TEST: ${{ matrix.test }}
       run: |
-          LC_ALL=C.UTF-8 test/monkey-see-monkey-do -v -d ${{ matrix.test }}
+          LC_ALL=C.UTF-8 test/monkey-see-monkey-do -v -d "$TEST"
