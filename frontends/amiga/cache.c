@@ -180,8 +180,6 @@ void ami_cache_remove_node(struct ami_cache_lst *cache_list, struct ami_cache_no
 	DelObjectNoFree(node->nsobj);
 	ami_memory_itempool_free(pool_cache, node, sizeof(struct ami_cache_node));
 #endif
-
-	lwc_string_unref(lws);
 }
 
 #ifndef __amigaos4__
