@@ -29,19 +29,14 @@
 #include "amiga/cache.h"
 #include "amiga/schedule.h"
 
-#ifdef __amigaos4__
-#include "amiga/hash/xxhash.h"
-#else
+#ifndef __amigaos4__
 #include "amiga/object.h"
 #endif
-
-#include <libwapcaplet/libwapcaplet.h>
 
 #ifdef __amigaos4__
 static struct Hook ami_cache_hook;
 #endif
 
-#ifdef __amigaos4__
 static lwc_string *ami_cache_name(const char *str)
 {
 	lwc_error lerror;
@@ -52,13 +47,6 @@ static lwc_string *ami_cache_name(const char *str)
 							
 	return lws;
 }
-#else
-static char *ami_cache_name(const char *str)
-{
-	return (char *)strdup(str);
-}
-#endif
-
 
 #ifdef __amigaos4__
 static LONG ami_cache_sort(struct Hook *hook, APTR key1, APTR key2)
@@ -89,8 +77,8 @@ static void ami_cache_cleanup(struct ami_cache_lst *cache_list)
 			lwc_string *lws = node->skip_node.sn_Key;
 			if(cache_list->callback(node)) {
 				NSLOG(netsurf, INFO,
-			      "Freeing %p not used for %ld seconds",
-			      lws,
+			      "Freeing %s not used for %ld seconds",
+			      lwc_String_data(lws),
 			      curtime.Seconds);
 				RemoveSkipNode(cache_list->list, lws);
 				lwc_string_unref(lws);
@@ -121,12 +109,14 @@ static void ami_cache_cleanup(struct ami_cache_lst *cache_list)
 		SubTime(&curtime, &fnode->lastused);
 		if(curtime.Seconds > 300)
 		{
+			lwc_string *lws = fnode->key;
 			if(cache_list->callback(fnode)) {
 				NSLOG(netsurf, INFO,
 			      "Freeing %s not used for %d seconds",
-			      node->dtz_Node.ln_Name,
+			      lwc_string_data(lws),
 			      curtime.Seconds);
 				DelObject(node);
+				lwc_string_unref(lws);
 			}
 		}
 	} while((node=nnode));
@@ -165,7 +155,10 @@ static void ami_cache_freeobjlist(struct ami_cache_lst *cache_list)
 		do {
 			nnode = (struct nsObject *)GetSucc((struct Node *)node);
 			cache_list->callback(node->objstruct); /* ignore return - we are exiting anyway */
+			struct ami_cache_node *fnode = (struct ami_cache_node *)node->objstruct;
+			lwc_string *lws = fnode->key;
 			DelObject(node);
+			lwc_string_unref(lws);
 		} while((node = nnode));
 	}
 	free(cache_list->list);
@@ -177,25 +170,48 @@ void ami_cache_remove_node(struct ami_cache_lst *cache_list, struct ami_cache_no
 #ifdef __amigaos4__
 	lwc_string *lws = node->skip_node.sn_Key;
 	RemoveSkipNode(cache_list->list, lws);
-	lwc_string_unref(lws);
 #else
+	lwc_string *lws = node->key;
 	DelObject(node->nsobj);
 #endif
+
+	lwc_string_unref(lws);
 }
+
+#ifndef __amigaos4__
+static struct ami_cache_node *ami_cache_find(struct ami_cache_lst *cache_list, lwc_string *lws)
+{
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct ami_cache_node *acnode = NULL;
+
+	if(!IsMinListEmpty((struct MinList *)cache_list->list)) {
+		node = (struct nsObject *)GetHead((struct List *)cache_list->list);
+
+		do {
+			bool err;
+			nnode = (struct nsObject *)GetSucc((struct Node *)node);
+			acnode = node->objstruct;
+			if lwc_string_isequal(acnode->key, lws, &err) return acnode;
+		} while((node = nnode));
+	}
+	
+	return NULL;
+}
+#endif
 
 struct ami_cache_node *ami_cache_locate(struct ami_cache_lst *cache_list, const char *str)
 {
 	struct ami_cache_node *nodedata = NULL;
+	lwc_string *lws = ami_cache_name(str);
 
 #ifdef __amigaos4__
-	lwc_string *lws = ami_cache_name(str);
 	nodedata = (struct ami_cache_node *)FindSkipNode(cache_list->list, (APTR)lws);
 #else
-	if(str != NULL) {
-		struct nsObject *node = (struct nsObject *)FindIName((struct List *)cache_list->list, str);
-		if(node) nodedata = node->objstruct;
-	}
+	nodedata = ami_cache_find(cache_list->list, lws);
 #endif
+
+	lwc_string_unref(lws);
 
 	if(nodedata) {
 		if(cache_list->cleanup) GetSysTime(&nodedata->lastused);
@@ -228,8 +244,8 @@ void ami_cache_insert(struct ami_cache_lst *cache_list, void *nodedata, const ch
 	struct nsObject *node = AddObject(cache_list->list, AMINS_CACHE);
 	if(node) {
 		node->objstruct = nodedata;
-		node->dtz_Node.ln_Name = ami_cache_name(str);
 		struct ami_cache_node *ndata = (struct ami_cache_node *)nodedata;
+		ndata->key = ami_cache_name(str);
 		ndata->nsobj = node;
 	}
 #endif

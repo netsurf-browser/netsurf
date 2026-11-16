@@ -27,6 +27,8 @@
 #include "amiga/object.h"
 #endif
 
+#include <libwapcaplet/libwapcaplet.h>
+
 struct ami_cache_lst
 {
 #ifdef __amigaos4__
@@ -45,6 +47,7 @@ struct ami_cache_node
 	struct SkipNode skip_node;
 #else
 	struct nsObject *nsobj;
+	lwc_string *key;
 #endif
 	struct TimeVal lastused;
 	void *userdata;
