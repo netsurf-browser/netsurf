@@ -131,6 +131,7 @@
 #include "amiga/gui.h"
 #include "amiga/arexx.h"
 #include "amiga/bitmap.h"
+#include "amiga/cache.h"
 #include "amiga/clipboard.h"
 #include "amiga/cookies.h"
 #include "amiga/ctxmenu.h"

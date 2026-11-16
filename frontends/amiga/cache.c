@@ -36,9 +36,9 @@
 
 #ifdef __amigaos4__
 static struct Hook ami_cache_hook;
-#endif
-
+#else
 static APTR pool_cache = NULL;
+#endif
 
 static lwc_string *ami_cache_name(const char *str)
 {
@@ -81,7 +81,7 @@ static void ami_cache_cleanup(struct ami_cache_lst *cache_list)
 			if(cache_list->callback(node)) {
 				NSLOG(netsurf, INFO,
 			      "Freeing %s not used for %ld seconds",
-			      lwc_String_data(lws),
+			      lwc_string_data(lws),
 			      curtime.Seconds);
 				RemoveSkipNode(cache_list->list, lws);
 				lwc_string_unref(lws);
