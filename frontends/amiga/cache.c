@@ -30,12 +30,15 @@
 #include "amiga/schedule.h"
 
 #ifndef __amigaos4__
+#include "amiga/memory.h"
 #include "amiga/object.h"
 #endif
 
 #ifdef __amigaos4__
 static struct Hook ami_cache_hook;
 #endif
+
+static APTR pool_cache = NULL;
 
 static lwc_string *ami_cache_name(const char *str)
 {
@@ -115,7 +118,8 @@ static void ami_cache_cleanup(struct ami_cache_lst *cache_list)
 			      "Freeing %s not used for %d seconds",
 			      lwc_string_data(lws),
 			      curtime.Seconds);
-				DelObject(node);
+				DelObjectNoFree(node);
+				ami_memory_itempool_free(pool_cache, fnode, sizeof(struct ami_cache_node));
 				lwc_string_unref(lws);
 			}
 		}
@@ -157,7 +161,8 @@ static void ami_cache_freeobjlist(struct ami_cache_lst *cache_list)
 			cache_list->callback(node->objstruct); /* ignore return - we are exiting anyway */
 			struct ami_cache_node *fnode = (struct ami_cache_node *)node->objstruct;
 			lwc_string *lws = fnode->key;
-			DelObject(node);
+			DelObjectNoFree(node);
+			ami_memory_itempool_free(pool_cache, fnode, sizeof(struct ami_cache_node));
 			lwc_string_unref(lws);
 		} while((node = nnode));
 	}
@@ -172,7 +177,8 @@ void ami_cache_remove_node(struct ami_cache_lst *cache_list, struct ami_cache_no
 	RemoveSkipNode(cache_list->list, lws);
 #else
 	lwc_string *lws = node->key;
-	DelObject(node->nsobj);
+	DelObjectNoFree(node->nsobj);
+	ami_memory_itempool_free(pool_cache, node, sizeof(struct ami_cache_node));
 #endif
 
 	lwc_string_unref(lws);
@@ -230,7 +236,7 @@ struct ami_cache_node *ami_cache_alloc_entry(struct ami_cache_lst *cache_list, c
 	lwc_string *lws = ami_cache_name(str);
 	nodedata = (struct ami_cache_node *)InsertSkipNode(cache_list->list, (APTR)lws, sizeof(struct ami_cache_node));
 #else
-	nodedata = malloc(sizeof(struct ami_cache_node));
+	nodedata = ami_memory_itempool_alloc(pool_cache, sizeof(struct ami_cache_node));
 #endif
 
 	if(cache_list->cleanup) GetSysTime(&nodedata->lastused);
@@ -265,15 +271,28 @@ void ami_cache_fini(struct ami_cache_lst *cache_list)
 	if(cache_list) free(cache_list);
 }
 
+void ami_cache_fini_pool(void)
+{
+#ifndef __amigaos4__
+	ami_memory_itempool_delete(pool_cache);
+	pool_cache = NULL;
+#endif
+}
+
 struct ami_cache_lst *ami_cache_init(BOOL (*callback)(void *node), BOOL cleanup)
 {
 	struct ami_cache_lst *lst = malloc(sizeof(struct ami_cache_lst));
+
 
 #ifdef __amigaos4__
 	ami_cache_hook.h_Entry = (HOOKFUNC)ami_cache_sort;
 	ami_cache_hook.h_Data = 0;
 	struct SkipList *ami_cache_list = CreateSkipList(&ami_cache_hook, 8);
 #else
+	if(pool_cache == NULL) {
+		pool_cache = ami_memory_itempool_create(sizeof(struct ami_cache_node));
+		if(pool_cache == NULL) return NULL;
+	}
 	struct MinList *ami_cache_list = NewObjList();
 #endif
 
@@ -286,4 +305,3 @@ struct ami_cache_lst *ami_cache_init(BOOL (*callback)(void *node), BOOL cleanup)
 	
 	return (void *)lst;
 }
-

@@ -76,6 +76,9 @@ struct ami_cache_lst *ami_cache_init(BOOL (*callback)(void *node), BOOL cleanup)
 /* cache clean-up */
 void ami_cache_fini(struct ami_cache_lst *cache_list);
 
+/* finalise all caches */
+void ami_cache_fini_pool(void);
+
 #endif
 
 

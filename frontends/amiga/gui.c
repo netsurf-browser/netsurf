@@ -3988,6 +3988,9 @@ static void gui_quit(void)
 	FreeObjList(window_list);
 
 	ami_clipboard_free();
+	
+	ami_cache_fini_pool();
+	
 	ami_gui_resources_free();
 }
 
