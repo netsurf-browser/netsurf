@@ -30,9 +30,7 @@
 #include <proto/intuition.h>
 #include <datatypes/animationclass.h>
 #include <datatypes/pictureclass.h>
-#ifdef __amigaos4__
 #include <graphics/blitattr.h>
-#endif
 #include <intuition/classusr.h>
 
 #include "utils/log.h"
@@ -216,7 +214,17 @@ bool amiga_dt_anim_convert(struct content *c)
 				BLITA_CLUT, clut,
 				TAG_DONE);
 #else
-#warning FIXME: Need to use a different blitter function for OS3!
+			/* OS3: use BltBitMapTags() with BLTA_* tags */
+			BltBitMapTags(
+				BLTA_Width, width,
+				BLTA_Height, height,
+				BLTA_Source, adt_frame.alf_BitMap,
+				BLTA_SrcType, BLITT_BITMAP,
+				BLTA_Dest, bm_buffer,
+				BLTA_DestType, BLITT_RGB24,
+				BLTA_DestBytesPerRow, width,
+				BLTA_CLUT, clut,
+				TAG_DONE);
 #endif
 				free(clut);
 
