@@ -235,7 +235,12 @@ struct ami_cache_node *ami_cache_alloc_entry(struct ami_cache_lst *cache_list, c
 
 #ifdef __amigaos4__
 	lwc_string *lws = ami_cache_name(str);
+	if(lws == NULL) return NULL;
 	nodedata = (struct ami_cache_node *)InsertSkipNode(cache_list->list, (APTR)lws, sizeof(struct ami_cache_node));
+	if(nodedata == NULL) {
+		lwc_string_unref(lws);
+		return NULL;
+	}
 #else
 	nodedata = ami_memory_itempool_alloc(pool_cache, sizeof(struct ami_cache_node));
 #endif
