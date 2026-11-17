@@ -1,10 +1,13 @@
 name: "Linux Build"
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   # Native linux builds
   native:
+    # Branches in this repo already get CI from the push; only run PR
+    # builds for PRs from forks (which a maintainer must approve).
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.fork
     name: 'Native: ${{ matrix.os }}: ${{ matrix.compiler }}'
     runs-on: ${{ matrix.os }}
     strategy:
@@ -79,6 +82,9 @@ jobs:
 
   # Cross compile using toolchains built in the toolchains repo.
   cross:
+    # Branches in this repo already get CI from the push; only run PR
+    # builds for PRs from forks (which a maintainer must approve).
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.fork
     name: 'Cross: ${{ matrix.build.toolchain }}' # ATM toolchain unique across builds
     runs-on: ubuntu-24.04 # Matches toolchains workflow
     strategy:
