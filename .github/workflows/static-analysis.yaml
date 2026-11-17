@@ -1,9 +1,12 @@
 name: "Static Analysis"
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   static-analysis:
+    # Branches in this repo already get CI from the push; only run PR
+    # builds for PRs from forks (which a maintainer must approve).
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.fork
     permissions:
       contents: read
       security-events: write
