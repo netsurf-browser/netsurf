@@ -44,10 +44,11 @@ static lwc_string *ami_cache_name(const char *str)
 {
 	lwc_error lerror;
 	lwc_string *lws = NULL;
+
+	if(str == NULL) return NULL;
 	lerror = lwc_intern_string(str, strlen(str), &lws);
 	if (lerror != lwc_error_ok)
 		return NULL;
-							
 	return lws;
 }
 
@@ -196,10 +197,10 @@ static struct ami_cache_node *ami_cache_find(struct ami_cache_lst *cache_list, l
 			bool err;
 			nnode = (struct nsObject *)GetSucc((struct Node *)node);
 			acnode = node->objstruct;
-			if lwc_string_isequal(acnode->key, lws, &err) return acnode;
+			if(acnode->key == lws) return acnode;
 		} while((node = nnode));
 	}
-	
+
 	return NULL;
 }
 #endif
@@ -209,10 +210,12 @@ struct ami_cache_node *ami_cache_locate(struct ami_cache_lst *cache_list, const 
 	struct ami_cache_node *nodedata = NULL;
 	lwc_string *lws = ami_cache_name(str);
 
+	if(lws == NULL) return NULL;
+
 #ifdef __amigaos4__
 	nodedata = (struct ami_cache_node *)FindSkipNode(cache_list->list, (APTR)lws);
 #else
-	nodedata = ami_cache_find(cache_list->list, lws);
+	nodedata = ami_cache_find(cache_list, lws);
 #endif
 
 	lwc_string_unref(lws);
