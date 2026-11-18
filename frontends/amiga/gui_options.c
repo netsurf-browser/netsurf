@@ -638,6 +638,10 @@ void ami_gui_opts_open(void)
 
 	homepage_url_lc = ami_utf8_easy(nsoption_charp(homepage_url));
 
+	/* Check is libcurl was built against c-ares and enable the DNS options if so
+	 * TODO: Query bsdsocket for the same tag c-ares uses to fetch the DNS servers
+	 * and prevent switching to the System DNS option if not available.
+	 */
 	if(cvid->ares != NULL) dns_disable = FALSE;
 	if(nsoption_bool(dns_override) == true) dnsoptsselected = 1;
 
@@ -1148,6 +1152,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_BevelStyle, BVS_GROUP,
 									LAYOUT_Label, gadlab[GRP_OPTS_DNS],
 									LAYOUT_AddChild, LayoutHObj,
+										LAYOUT_VertAlignment, LALIGN_BOTTOM,
 										LAYOUT_AddChild, gow->objects[GID_OPTS_DNS] = RadioButtonObj,
 											GA_ID, GID_OPTS_DNS,
 											GA_RelVerify, TRUE,
