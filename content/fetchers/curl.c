@@ -102,6 +102,23 @@
 	/* enable (non-PFS) RSA (mac=SHA1) AES CBC suites */	\
 	"RSA+AES+SHA1"
 
+/**
+ * TLS signature algorithms to use (requires OpenSSL >= 3.3)
+ */
+#define SIGNATURE_ALGORITHMS						\
+	"?mldsa65:?mldsa87:?mldsa44:"					\
+	"ecdsa_secp256r1_sha256:ecdsa_secp384r1_sha384:"		\
+	"ecdsa_secp521r1_sha512:"					\
+	"ed25519:ed448:"						\
+	"ecdsa_brainpoolP256r1tls13_sha256:"				\
+	"ecdsa_brainpoolP384r1tls13_sha384:"				\
+	"ecdsa_brainpoolP512r1tls13_sha512:"				\
+	"rsa_pss_pss_sha256:rsa_pss_pss_sha384:rsa_pss_pss_sha512:"	\
+	"rsa_pss_rsae_sha256:rsa_pss_rsae_sha384:rsa_pss_rsae_sha512:"	\
+	"rsa_pkcs1_sha256:rsa_pkcs1_sha384:rsa_pkcs1_sha512:"		\
+	"ecdsa_sha224:rsa_pkcs1_sha224:dsa_sha224:"			\
+	"dsa_sha256:dsa_sha384:dsa_sha512"
+
 /* Open SSL compatability for certificate handling */
 #ifdef WITH_OPENSSL
 
@@ -2156,6 +2173,14 @@ nserror fetch_curl_register(void)
 			goto curl_easy_setopt_failed;
 #endif
 		SETOPT(CURLOPT_SSL_CIPHER_LIST, CIPHER_LIST);
+#if LIBCURL_VERSION_NUM >= 0x080e00
+		/* Need libcurl 8.14.0 or later built against OpenSSL >= 3.3 */
+		code = curl_easy_setopt(fetch_blank_curl,
+				CURLOPT_SSL_SIGNATURE_ALGORITHMS,
+				SIGNATURE_ALGORITHMS);
+		if (code != CURLE_OK && code != CURLE_NOT_BUILT_IN)
+			goto curl_easy_setopt_failed;
+#endif
 	}
 
 	NSLOG(netsurf, INFO, "cURL %slinked against openssl",
