@@ -806,8 +806,45 @@ fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 {
 	struct curl_fetch_info *f = (struct curl_fetch_info *) parm;
 	SSL_CTX *sslctx = _sslctx;
-	long options = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
+	/* OpenSSL 1.1.1 or LibreSSL */
+	long
+#else
+	/* OpenSSL >= 3 */
+	uint64_t
+#endif
+	options = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
 			SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1;
+#ifdef SSL_OP_NO_TX_CERTIFICATE_COMPRESSION
+	options |= SSL_OP_NO_TX_CERTIFICATE_COMPRESSION;
+#endif
+#ifdef SSL_OP_NO_RX_CERTIFICATE_COMPRESSION
+	options |= SSL_OP_NO_RX_CERTIFICATE_COMPRESSION;
+#endif
+#ifdef SSL_OP_ENABLE_KTLS_TX_ZEROCOPY
+	options |= SSL_OP_ENABLE_KTLS_TX_ZEROCOPY;
+#endif
+#ifdef SSL_OP_PREFER_NO_DHE_KEX
+	options |= SSL_OP_PREFER_NO_DHE_KEX;
+#endif
+#ifdef SSL_OP_LEGACY_EC_POINT_FORMATS
+	options |= SSL_OP_LEGACY_EC_POINT_FORMATS;
+#endif
+#ifdef SSL_OP_ECH_GREASE
+	options |= SSL_OP_ECH_GREASE;
+#endif
+#ifdef SSL_OP_ECH_TRIALDECRYPT
+	options |= SSL_OP_ECH_TRIALDECRYPT;
+#endif
+#ifdef SSL_OP_ECH_IGNORE_CID
+	options |= SSL_OP_ECH_IGNORE_CID;
+#endif
+#ifdef SSL_OP_ECH_GREASE_RETRY_CONFIG
+	options |= SSL_OP_ECH_GREASE_RETRY_CONFIG;
+#endif
+#ifdef SSL_OP_GREASE
+	options |= SSL_OP_GREASE;
+#endif
 
 	/* set verify callback for each certificate in chain */
 	SSL_CTX_set_verify(sslctx, SSL_VERIFY_PEER, fetch_curl_verify_callback);
