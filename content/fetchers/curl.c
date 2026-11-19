@@ -766,12 +766,17 @@ fetch_curl_verify_callback(int verify_ok, X509_STORE_CTX *x509_ctx)
 static int fetch_curl_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm)
 {
 	struct curl_fetch_info *f = (struct curl_fetch_info *) parm;
-	int ok;
 	X509_VERIFY_PARAM *vparam;
+	unsigned int hostflags = X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS;
+	int ok;
+
+#ifdef X509_CHECK_FLAG_NEVER_CHECK_SUBJECT
+	hostflags |= X509_CHECK_FLAG_NEVER_CHECK_SUBJECT;
+#endif
 
 	/* Configure the verification parameters to include hostname */
 	vparam = X509_STORE_CTX_get0_param(x509_ctx);
-	X509_VERIFY_PARAM_set_hostflags(vparam, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+	X509_VERIFY_PARAM_set_hostflags(vparam, hostflags);
 
 	ok = X509_VERIFY_PARAM_set1_host(vparam,
 					 lwc_string_data(f->host),
